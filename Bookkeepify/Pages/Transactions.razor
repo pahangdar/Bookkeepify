@@ -1,0 +1,138 @@
+﻿@page "/transactions"
+
+<PageTitle>Transactions</PageTitle>
+
+<ConfirmationDialog IsVisible="@isConfirmationDialogVisible"
+                    OnConfirm="DeleteConfirmed"
+                    Title="Delete Transaction Confirmation"
+                    Message="@deleteMessage" />
+
+@if (ShowNewEditPanel)
+{
+    <TransactionsNewEdit SelectedTransaction="@selectedTransaction" OnSave="HandleSaveResult" />
+}
+else
+{
+    <h1>Transactions</h1>
+
+    <button class="btn btn-success btn-lg" @onclick="NewTransaction">
+        <i class="oi oi-plus"></i>&nbsp;New Transaction
+    </button>
+
+    @if (transactions == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ref#</th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var transaction in transactions)
+                {
+                    <tr>
+                        <td>@transaction.Id</td>
+                        <td>@transaction.Date</td>
+                        <td>@transaction.Description</td>
+                        <td>@transaction.TransactionType.Name</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" @onclick="() => EditTransaction(transaction)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                                <i class="oi oi-pencil"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => ShowConfirmationDialog(transaction)" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                                <i class="oi oi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@using Microsoft.EntityFrameworkCore
+@inject TransactionService TransactionService
+@inject TransactionDetailService TransactionDetailService
+
+@code {
+    private List<Transaction> transactions;
+    private Transaction selectedTransaction;
+
+    private Boolean ShowNewEditPanel = false;
+
+    private bool isConfirmationDialogVisible = false;
+    private string deleteMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshTransactions();
+    }
+
+    private void NewTransaction()
+    {
+        selectedTransaction = null;
+        ShowNewEditPanel = true;
+    }
+
+    private void EditTransaction(Transaction transaction)
+    {
+        selectedTransaction = transaction;
+        ShowNewEditPanel = true;
+    }
+
+    private void ShowConfirmationDialog(Transaction transaction)
+    {
+        selectedTransaction = transaction;
+        if (selectedTransaction != null)
+        {
+            deleteMessage = $"Are you sure you want to delete '<strong>{selectedTransaction.Id}-{selectedTransaction.Description}</strong>' ?";
+            isConfirmationDialogVisible = true;
+        }
+    }
+
+    private async Task DeleteConfirmed(bool isConfirmed)
+    {
+        isConfirmationDialogVisible = false;
+
+        if (isConfirmed)
+        {
+            await TransactionDetailService.DeleteTransactionDetailsAsync(selectedTransaction.Id);
+            await TransactionService.DeleteTransactionAsync(selectedTransaction.Id);
+            await RefreshTransactions(); // Refresh transaction list after deletion
+            deleteMessage = "";
+        }
+    }
+
+    private async Task RefreshTransactions()
+    {
+        transactions = await TransactionService.GetTransactionsAsync();
+    }
+
+    private async Task HandleSaveResult(bool isSaved)
+    {
+        ShowNewEditPanel = false;
+
+        if (isSaved)
+        {
+            await RefreshTransactions();
+            StateHasChanged(); // Notify Blazor to re-render the UI
+        }
+        else
+        {
+            // Cancel was selected
+        }
+    }
+
+}

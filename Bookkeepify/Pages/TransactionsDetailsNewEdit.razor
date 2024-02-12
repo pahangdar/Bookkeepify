@@ -1,0 +1,231 @@
+﻿@page "/transactionsdetails-newedit"
+
+<Toast />
+
+<Alert IsVisible="@isAlertVisible"
+       Title="@errorTitle"
+       Message="@errorMessage" />
+
+
+<TransactionsDetailAddModal IsVisible="@showAddDetailModal"
+                           OnAdd="AddTransactionDetail"
+                           AccountsList="@accounts" />
+
+<PageTitle>@title</PageTitle>
+
+<h3>@title :@transaction.Description</h3>
+@if (isSaved)
+{
+    <p><em>Transaction saved successfully!</em></p>
+}
+
+@if (accounts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Account</th>
+                <th>Debit</th>
+                <th>Credit</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var tdetail in details)
+            {
+                <tr>
+                    <td>@tdetail.Account.Name</td>
+                    <td>@tdetail.DebitAmount</td>
+                    <td>@tdetail.CreditAmount</td>
+                    <td>
+                        <!--
+                        <button class="btn btn-primary btn-sm" @onclick="() => DeleteTransactionDetail(tdetail)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                            <i class="oi oi-pencil"></i>
+                        </button>
+                        -->
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteTransactionDetail(tdetail)" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                            <i class="oi oi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+            <tr>
+                <th>Overall Sum:</th>
+                <th>@sumDebit</th>
+                <th>@SumCredit</th>
+                <th></th>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>
+                    <button class="btn btn-success btn-sm" @onclick="OpenAddModal" data-bs-toggle="tooltip" data-bs-placement="top" title="Add">
+                        <i class="oi oi-plus"></i>
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="form-group mt-4  mb-4">
+        <button type="submit" class="btn btn-primary mr-2" @onclick="SaveTransaction">Save</button>
+        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+    </div>
+    <hr />
+}
+
+@using Bookkeepify.Interfaces
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@using Microsoft.EntityFrameworkCore
+@inject NavigationManager NavigationManager
+@inject AccountService AccountService
+@inject TransactionService TransactionService
+@inject TransactionDetailService TransactionDetailService
+@inject ToastService toastService
+
+@code {
+    private Transaction transaction;
+    private List<Account> accounts;
+    private List<TransactionDetail> details;
+    private bool isSaved = false;
+    private bool isEditMode;
+    private string title;
+    private decimal sumDebit, SumCredit;
+    private bool showAddDetailModal = false;
+    private bool isAlertVisible = false;
+    private string errorMessage;
+    private string errorTitle;
+    private int count = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        transaction = TransactionService.Transaction;
+        if (transaction == null)
+        {
+            NavigationManager.NavigateTo($"/transactions");
+        }
+        isEditMode = (transaction.Id >0) ? true: false;
+        accounts = await AccountService.GetAccountsAsync();
+        details = new List<TransactionDetail>();
+
+        if (isEditMode)
+        {
+            title = "Edit Transaction Details";
+            details = await TransactionDetailService.GetTransactionDetailsAsync(transaction.Id);
+        }
+        else
+        {
+            title = "Add Transaction Details";
+        }
+
+        SumDebitCredit();
+    }
+
+    private async Task DeleteTransactionDetail(TransactionDetail detail)
+    {
+        details.Remove(detail);
+        SumDebitCredit();
+    }
+
+    private void OpenAddModal()
+    {
+        showAddDetailModal = true;
+    }
+
+    private async Task SaveTransaction()
+    {
+        errorMessage = "";
+        isAlertVisible = false;
+        if (details == null || details.Count == 0)
+        {
+            count++;
+            errorMessage = "There are no Details";
+        } else
+        {
+            decimal totalDebit = details.Sum(d => d.DebitAmount);
+            decimal totalCredit = details.Sum(d => d.CreditAmount);
+
+            if (totalDebit <= 0 || totalCredit <= 0 || totalDebit != totalCredit)
+            {
+                count++;
+                errorMessage = "Sum of Debit is not equal to sum of Credit";
+            }
+        }
+
+
+        if (errorMessage != "")
+        {
+            //toastService.ShowError(errorMessage);
+            errorTitle = "Alert " + count.ToString();
+            isAlertVisible = true;
+            return;
+        }
+
+        if (!isEditMode)
+        {
+            await TransactionService.AddTransactionAsync(transaction);
+        }
+        else
+        {
+            await TransactionService.UpdateTransactionAsync(transaction);
+        }
+
+        int transactionId = transaction.Id;
+
+
+        // Assign the obtained transaction ID to the TransactionId property of each TransactionDetail
+        foreach (var detail in details)
+        {
+            detail.TransactionId = transactionId;
+        }
+
+        // Save the transaction details
+        if (isEditMode)
+        {
+            await TransactionDetailService.DeleteTransactionDetailsAsync(transactionId);
+        }
+        var (success, errMessage) = await TransactionDetailService.SaveTransactionDetailsAsync(details);
+
+        if (success)
+        {
+            NavigationManager.NavigateTo("/transactions");
+        } else
+        {
+            errorMessage = errMessage;
+            errorTitle = "Alert " + count.ToString();
+            isAlertVisible = true;
+        }
+    }
+
+
+    private void AddTransactionDetail(TransactionDetail detail)
+    {
+        details.Add(detail);
+        SumDebitCredit();
+        showAddDetailModal = false; // Close the modal after adding
+    }
+
+    private void Cancel()
+    {
+        isSaved = false;
+        NavigationManager.NavigateTo($"/transactions");
+    }
+
+    private void SumDebitCredit()
+    {
+        SumCredit = 0;
+        sumDebit = 0;
+        foreach(var dt in details)
+        {
+            SumCredit += dt.CreditAmount;
+            sumDebit += dt.DebitAmount;
+        }
+    }
+
+}

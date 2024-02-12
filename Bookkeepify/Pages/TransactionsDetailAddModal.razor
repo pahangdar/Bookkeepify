@@ -1,0 +1,70 @@
+﻿@if (IsVisible)
+{
+    <div class="modal" tabindex="-1" style="display:block;">
+        <div class="modal-dialog alert alert-success">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Transaction Detail</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@transactionDetail" OnValidSubmit="AddTransactionDetail">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+                        <div class="form-group">
+                            <label for="account">Account:</label>
+                            <select class="form-control" @bind="transactionDetail.AccountId" required>
+                                @foreach (var account in AccountsList)
+                                {
+                                    <option value="@account.Id">@account.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="amountDebit">Debit:</label>
+                            <input type="number" class="form-control" @bind="transactionDetail.DebitAmount" />
+                            <ValidationMessage For="@(() => transactionDetail.DebitAmount)" />
+                        </div>
+                        <div class="form-group">
+                            <label for="amountCredit">Credit:</label>
+                            <input type="number" class="form-control" @bind="transactionDetail.CreditAmount" />
+                            <ValidationMessage For="@(() => transactionDetail.CreditAmount)" />
+                        </div>
+                        <div class="modal-footer justify-content-end">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary mr-2">Add</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@using Bookkeepify.Models
+@using Microsoft.EntityFrameworkCore
+
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+    [Parameter]
+    public EventCallback<TransactionDetail> OnAdd { get; set; }
+    [Parameter]
+    public List<Account> AccountsList { get; set; }
+
+    private TransactionDetail transactionDetail = new TransactionDetail();
+
+    private async Task AddTransactionDetail()
+    {
+        transactionDetail.Account = AccountsList.FirstOrDefault(a => a.Id == transactionDetail.AccountId);
+        await OnAdd.InvokeAsync(transactionDetail);
+        transactionDetail = new TransactionDetail();
+    }
+
+    private void CloseModal()
+    {
+        transactionDetail = new TransactionDetail();
+        IsVisible = false;
+    }
+}

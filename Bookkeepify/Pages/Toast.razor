@@ -1,0 +1,54 @@
+﻿@using Bookkeepify.Services
+@inject ToastService toastService
+
+@if (!string.IsNullOrEmpty(toastMessage))
+{
+    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000">
+        <div class="toast-header">
+            <strong class="mr-auto">Notification</strong>
+            <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close" @onclick="ClearToast">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="toast-body">
+            @if (toastType == ToastType.Success)
+            {
+                <div class="alert alert-success">@toastMessage</div>
+            }
+            else if (toastType == ToastType.Error)
+            {
+                <div class="alert alert-danger">@toastMessage</div>
+            }
+            else if (toastType == ToastType.Warning)
+            {
+                <div class="alert alert-warning">@toastMessage</div>
+            }
+            else if (toastType == ToastType.Info)
+            {
+                <div class="alert alert-info">@toastMessage</div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private string toastMessage;
+    private ToastType toastType;
+
+    protected override void OnInitialized()
+    {
+        // Subscribe to toast events from ToastService
+        toastService.OnShowToast += (message, type) =>
+            {
+            toastMessage = message;
+            toastType = type;
+            StateHasChanged();
+        };
+    }
+
+    private void ClearToast()
+    {
+        toastMessage = null;
+        toastType = ToastType.Info;
+    }
+}

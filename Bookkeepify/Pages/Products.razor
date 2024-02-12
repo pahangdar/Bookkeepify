@@ -1,0 +1,54 @@
+﻿@page "/products"
+
+<PageTitle>AccountTypes</PageTitle>
+
+<h1>AccountTypes</h1>
+
+
+
+@if (accountTypes == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var accountType in accountTypes)
+            {
+                <tr>
+                    <td>@accountType.Id</td>
+                    <td>@accountType.Name</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@using Bookkeepify.Data
+@using Bookkeepify.Models
+@using Microsoft.EntityFrameworkCore
+@inject IConfiguration Configuration
+
+@code {
+    private AppDbContext _context;
+    private List<AccountType> accountTypes;
+
+    private Boolean newAccountPanel = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        _context = new AppDbContext(Configuration);
+
+        accountTypes = await _context.AccountTypes.ToListAsync();
+    }
+
+}

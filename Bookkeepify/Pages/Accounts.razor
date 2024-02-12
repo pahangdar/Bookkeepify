@@ -1,0 +1,141 @@
+﻿@page "/accounts"
+
+<PageTitle>Accounts</PageTitle>
+
+<ConfirmationDialog
+    IsVisible="@isConfirmationDialogVisible"
+    OnConfirm="DeleteConfirmed"
+    Title="Delete Account Confirmation"
+    Message="@deleteMessage" />
+
+@if (ShowNewEditPanel)
+{
+    <AccountsNewEdit SelectedAccount="@selectedAccount" OnSave="HandleSaveResult" />
+}
+
+<h1>Accounts</h1>
+
+
+@if (!ShowNewEditPanel)
+{
+    <button class="btn btn-success btn-lg" @onclick="NewAccount">
+        <i class="oi oi-plus"></i>&nbsp;New Account
+        </button>
+}
+
+
+@if (accounts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Balance</th>
+                <th>Type</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var account in accounts)
+            {
+                <tr>
+                    <td>@account.Code</td>
+                    <td>@account.Name</td>
+                    <td>@account.Balance</td>
+                    <td>@account.AccountType.Name</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" @onclick="() => EditAccount(account)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                            <i class="oi oi-pencil"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => ShowConfirmationDialog(account)" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                            <i class="oi oi-trash"></i>
+                        </button>
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@using Microsoft.EntityFrameworkCore
+@inject AccountService AccountService
+
+
+@code {
+    private List<Account> accounts;
+    private Account selectedAccount;
+
+    private Boolean ShowNewEditPanel = false;
+
+    private bool isConfirmationDialogVisible = false;
+    private string deleteMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAccounts();
+    }
+
+    private void NewAccount()
+    {
+        ShowNewEditPanel = true;
+        selectedAccount = null;
+    }
+
+    private void EditAccount(Account account)
+    {
+        ShowNewEditPanel = true;
+        selectedAccount = account;
+    }
+
+    private void ShowConfirmationDialog(Account account)
+    {
+        selectedAccount = account;
+        if (selectedAccount != null)
+        {
+            deleteMessage = $"Are you sure you want to delete '<strong>{selectedAccount.Code}-{selectedAccount.Name}</strong>' ?";
+            isConfirmationDialogVisible = true;
+        }
+    }
+
+    private async Task DeleteConfirmed(bool isConfirmed)
+    {
+        isConfirmationDialogVisible = false;
+
+        if (isConfirmed)
+        {
+            await AccountService.DeleteAccountAsync(selectedAccount.Id);
+            await RefreshAccounts(); // Refresh account list after deletion
+            deleteMessage = "";
+        }
+    }
+
+    private async Task RefreshAccounts()
+    {
+        accounts = await AccountService.GetAccountsAsync();
+    }
+
+    private async Task HandleSaveResult(bool isSaved)
+    {
+        ShowNewEditPanel = false;
+
+        if (isSaved)
+        {
+            await RefreshAccounts();
+            StateHasChanged(); // Notify Blazor to re-render the UI
+        }
+        else
+        {
+            // Cancel was selected
+        }
+    }
+
+}

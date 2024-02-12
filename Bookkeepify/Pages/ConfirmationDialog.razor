@@ -1,0 +1,60 @@
+﻿@if (IsVisible)
+{
+    <div class="modal" tabindex="-1" role="dialog" style="display:block;">
+        <div class="modal-dialog alert alert-danger" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="Cancel">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @((MarkupString)Message)
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="Confirm">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnConfirm { get; set; }
+
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public string Message { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Title == null)
+        {
+            Title = "Confirmation";
+        }
+        if (Message == null)
+        {
+            Message = "Are you sure you want to delete this data?";
+        }
+    }
+
+
+
+    private async Task Confirm()
+    {
+        await OnConfirm.InvokeAsync(true);
+    }
+
+    private async Task Cancel()
+    {
+        await OnConfirm.InvokeAsync(false);
+    }
+}

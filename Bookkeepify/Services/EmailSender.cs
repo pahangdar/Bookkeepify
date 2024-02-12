@@ -1,7 +1,7 @@
 ﻿using System.Net.Mail;
 using System.Net;
 
-namespace Bookkeepify.Service
+namespace Bookkeepify.Services
 {
     public class EmailSender
     {

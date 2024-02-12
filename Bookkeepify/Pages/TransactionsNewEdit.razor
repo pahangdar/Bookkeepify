@@ -1,0 +1,93 @@
+﻿@page "/transactions-newedit"
+
+<PageTitle>@title</PageTitle>
+
+<h3>@title</h3>
+
+@if (isSaved)
+{
+    <p><em>Transaction saved successfully!</em></p>
+}
+
+    <EditForm Model="@transaction" OnValidSubmit="Next">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="date">Date:</label>
+            <div class="col-lg-3">
+                <InputDate class="form-control" @bind-Value="@transaction.Date" />
+                <ValidationMessage For="@(() => transaction.Date)" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <InputText class="form-control" @bind-Value="@transaction.Description" />
+            <ValidationMessage For="@(() => transaction.Description)" />
+        </div>
+
+        <div class="form-group mt-4  mb-4">
+            <button type="submit" class="btn btn-primary mr-2">Next</button>
+            <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+        </div>
+        <hr />
+    </EditForm>
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject TransactionService TransactionService
+
+
+@code {
+    [Parameter]
+    public Transaction SelectedTransaction { get; set; }
+    [Parameter]
+    public EventCallback<bool> OnSave { get; set; }
+
+    public Transaction transaction;
+    private bool isSaved = false;
+    private bool isEditMode => SelectedTransaction != null;
+    private string title;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authenticationState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        transaction = new Transaction();
+
+        if (isEditMode)
+        {
+            title = "Edit Transaction";
+            transaction = SelectedTransaction;
+        } else
+        {
+            title = "Add New Transaction";
+            transaction.Id = 0;
+            transaction.Date = DateTime.Today;
+            transaction.TransactionTypeId = 1;
+        }
+
+        transaction.UserId = userId;
+    }
+
+    private void Next()
+    {
+        TransactionService.Transaction = transaction;
+        NavigationManager.NavigateTo($"/transactionsdetails-newedit");
+    }
+
+    private void Cancel()
+    {
+        // Reset the form fields and clear any validation errors
+        transaction = new Transaction();
+        isSaved = false;
+        OnSave.InvokeAsync(isSaved);
+    }
+
+}

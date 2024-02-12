@@ -2,9 +2,9 @@
 
 #nullable disable
 
-namespace Bookkeepify.Data.Migrations
+namespace Bookkeepify.Migrations
 {
-    public partial class _01initdatabase : Migration
+    public partial class update6Database : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
