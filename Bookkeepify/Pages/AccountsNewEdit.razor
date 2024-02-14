@@ -1,6 +1,10 @@
 ﻿@page "/accounts/new-edit"
+@attribute [Authorize]
 
 <PageTitle>@title</PageTitle>
+
+@if (HasAccess)
+{
 
 <h3>@title</h3>
 
@@ -55,14 +59,25 @@ else
     </EditForm>
 }
 
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
 @using Bookkeepify.Models
 @using Bookkeepify.Services
 @using Microsoft.EntityFrameworkCore
 @inject AccountTypeService AccountTypeService
 @inject AccountService AccountService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AuthorizationService AuthorizationService
 
 
 @code {
+    private bool HasAccess { get; set; } = false;
+    string uriString;
+
     private Account account = new Account();
     private List<AccountType> accountTypes;
     private bool isSaved = false;
@@ -75,6 +90,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+        uriString = await AuthorizationService.CheckPageUriAsync(authState);
+
         accountTypes = await AccountTypeService.GetAccountTypesAsync();
 
         if (isEditMode)

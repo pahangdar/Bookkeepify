@@ -28,6 +28,7 @@ builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<TransactionDetailService>();
 builder.Services.AddScoped<TransactionTypeService>();
+builder.Services.AddScoped<AuthorizationService>();
 //builder.Services.AddScoped<IToastService, ToastService>();
 builder.Services.AddScoped<ToastService>();
 builder.Services.AddRazorPages();

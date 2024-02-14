@@ -1,4 +1,5 @@
 ﻿@page "/accounts"
+@attribute [Authorize]
 
 <PageTitle>Accounts</PageTitle>
 
@@ -7,6 +8,9 @@
     OnConfirm="DeleteConfirmed"
     Title="Delete Account Confirmation"
     Message="@deleteMessage" />
+
+@if (HasAccess)
+{
 
 @if (ShowNewEditPanel)
 {
@@ -49,10 +53,20 @@ else
                     <td>@account.Balance</td>
                     <td>@account.AccountType.Name</td>
                     <td>
-                        <button class="btn btn-primary btn-sm" @onclick="() => EditAccount(account)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                        <button class="btn btn-primary btn-sm"
+                                @onclick="() => EditAccount(account)"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                title="Edit"
+                                disabled="@ShowNewEditPanel">
                             <i class="oi oi-pencil"></i>
                         </button>
-                        <button class="btn btn-danger btn-sm" @onclick="() => ShowConfirmationDialog(account)" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                        <button class="btn btn-danger btn-sm"
+                                @onclick="() => ShowConfirmationDialog(account)"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                title="Delete"
+                                disabled="@ShowNewEditPanel">
                             <i class="oi oi-trash"></i>
                         </button>
 
@@ -63,14 +77,26 @@ else
     </table>
 }
 
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
 
 @using Bookkeepify.Models
 @using Bookkeepify.Services
+@using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @inject AccountService AccountService
-
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AuthorizationService AuthorizationService
 
 @code {
+    private bool HasAccess { get; set; } = false;
+    string uriString;
+
     private List<Account> accounts;
     private Account selectedAccount;
 
@@ -82,6 +108,10 @@ else
     protected override async Task OnInitializedAsync()
     {
         await RefreshAccounts();
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+        uriString = await AuthorizationService.CheckPageUriAsync(authState);
     }
 
     private void NewAccount()

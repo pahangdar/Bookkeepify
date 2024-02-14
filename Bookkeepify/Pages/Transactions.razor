@@ -1,4 +1,5 @@
 ﻿@page "/transactions"
+@attribute [Authorize]
 
 <PageTitle>Transactions</PageTitle>
 
@@ -44,10 +45,20 @@ else
                         <td>@transaction.Description</td>
                         <td>@transaction.TransactionType.Name</td>
                         <td>
-                            <button class="btn btn-primary btn-sm" @onclick="() => EditTransaction(transaction)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                            <button class="btn btn-primary btn-sm"
+                                    @onclick="() => EditTransaction(transaction)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Edit"
+                                    disabled="@ShowNewEditPanel">
                                 <i class="oi oi-pencil"></i>
                             </button>
-                            <button class="btn btn-danger btn-sm" @onclick="() => ShowConfirmationDialog(transaction)" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => ShowConfirmationDialog(transaction)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Delete"
+                                    disabled="@ShowNewEditPanel">
                                 <i class="oi oi-trash"></i>
                             </button>
                         </td>
