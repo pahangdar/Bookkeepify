@@ -1,4 +1,4 @@
-﻿@page "/transactions-newedit"
+﻿@page "/transactions/newedit"
 @attribute [Authorize]
 
 <PageTitle>@title</PageTitle>
@@ -37,7 +37,6 @@
 
 @using Bookkeepify.Models
 @using Bookkeepify.Services
-@using Microsoft.EntityFrameworkCore
 @using System.Security.Claims
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
@@ -46,11 +45,13 @@
 
 @code {
     [Parameter]
-    public Transaction SelectedTransaction { get; set; }
-    [Parameter]
     public EventCallback<bool> OnSave { get; set; }
+    [Parameter]
+    public Transaction SelectedTransaction { get; set; }
 
-    public Transaction transaction;
+    private bool HasAccess { get; set; } = false;
+
+    public Transaction transaction = new Transaction();
     private bool isSaved = false;
     private bool isEditMode => SelectedTransaction != null;
     private string title;
@@ -80,7 +81,7 @@
     private void Next()
     {
         TransactionService.Transaction = transaction;
-        NavigationManager.NavigateTo($"/transactionsdetails-newedit");
+        NavigationManager.NavigateTo($"/transactions/details/newedit");
     }
 
     private void Cancel()

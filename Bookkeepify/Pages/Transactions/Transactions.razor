@@ -1,0 +1,83 @@
+﻿@page "/transactions"
+@attribute [Authorize]
+
+<PageTitle>Transactions</PageTitle>
+
+@if (HasAccess)
+{
+    @if (ShowNewEditPanel)
+    {
+        <TransactionsNewEdit SelectedTransaction="@selectedTransaction" OnSave="HandleSaveResult" />
+    }
+    else
+    {
+        <button class="btn btn-success btn-lg" @onclick="NewTransaction">
+            <i class="oi oi-plus"></i>&nbsp;New Transaction
+        </button>
+        <br />
+        <br />
+
+        <TransactionsList DesiableButtons="@ShowNewEditPanel"
+                      OnEdit="HandleEditTransaction"
+                      @ref="transactionsListRef" />
+    }
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code {
+    private bool HasAccess { get; set; } = false;
+
+    private Transaction selectedTransaction;
+    private Boolean ShowNewEditPanel = false;
+
+    private TransactionsList transactionsListRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+    }
+
+    private void NewTransaction()
+    {
+        selectedTransaction = null;
+        ShowNewEditPanel = true;
+    }
+
+    private async Task HandleEditTransaction(Transaction transaction)
+    {
+        ShowNewEditPanel = true;
+        selectedTransaction = transaction;
+    }
+
+
+    private async Task HandleSaveResult(bool isSaved)
+    {
+        ShowNewEditPanel = false;
+
+        if (isSaved)
+        {
+            // in edit mode there is no need to the following code!
+            if (transactionsListRef != null)
+            {
+                // Call the RefreshAccounts method of the AccountsList component
+                await transactionsListRef.RefreshTransactions();
+            }
+        }
+        else
+        {
+            // Cancel was selected
+        }
+    }
+
+}

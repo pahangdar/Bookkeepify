@@ -1,0 +1,148 @@
+﻿@page "/customers/new-edit"
+@attribute [Authorize]
+
+<PageTitle>@title</PageTitle>
+
+@if (HasAccess)
+{
+    <h3>@title</h3>
+
+    @if (isSaved)
+    {
+        <p><em>Customer saved successfully!</em></p>
+    }
+
+    @if (accounts == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+
+        <EditForm Model="@customer" OnValidSubmit="SaveCustomer">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <InputText class="form-control" @bind-Value="@customer.Name" />
+                <ValidationMessage For="@(() => customer.Name)" />
+            </div>
+
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <InputText class="form-control" @bind-Value="@customer.Address" />
+                <ValidationMessage For="@(() => customer.Address)" />
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone:</label>
+                <InputText class="form-control" @bind-Value="@customer.Phone" />
+                <ValidationMessage For="@(() => customer.Phone)" />
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <InputText class="form-control" @bind-Value="@customer.Email" />
+                <ValidationMessage For="@(() => customer.Email)" />
+            </div>
+
+            <div class="form-group">
+                <label for="CustomerAccount">Customer Account:</label>
+                <select class="form-control" @bind="@customer.AccountId" required>
+                    <option value="" selected disabled>Choose...</option>
+                    @foreach (var account in accounts)
+                    {
+                        <option value="@account.Id">@account.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group mt-4  mb-4">
+                <button type="submit" class="btn btn-primary mr-2">Save</button>
+                <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            </div>
+            <hr />
+        </EditForm>
+    }
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@using System.Security.Claims
+@inject AccountService AccountService
+@inject CustomerService CustomerService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    [Parameter]
+    public EventCallback<bool> OnSave { get; set; }
+    [Parameter]
+    public Customer SelectedCustomer { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+    private Customer customer = new Customer();
+    private List<Account> accounts;
+    private bool isSaved = false;
+    private bool isEditMode => SelectedCustomer != null;
+    private string title;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+
+        accounts = await AccountService.GetAccountsAsync();
+
+        if (isEditMode)
+        {
+            title = "Edit Customer";
+            customer.Name = SelectedCustomer.Name;
+            customer.Address = SelectedCustomer.Address;
+            customer.Phone = SelectedCustomer.Phone;
+            customer.Email = SelectedCustomer.Email;
+            customer.AccountId = SelectedCustomer.AccountId;
+        }
+        else
+        {
+            title = "Add New Customer";
+        }
+        customer.UserId = userId;
+    }
+
+    private async Task SaveCustomer()
+    {
+        if (isEditMode)
+        {
+            SelectedCustomer.Name = customer.Name;
+            SelectedCustomer.Address = customer.Address;
+            SelectedCustomer.Phone = customer.Phone;
+            SelectedCustomer.Email = customer.Email;
+            SelectedCustomer.AccountId = customer.AccountId;
+            await CustomerService.UpdateCustomerAsync(SelectedCustomer);
+        }
+        else
+        {
+            await CustomerService.AddCustomerAsync(customer);
+        }
+        // Clear the form and set the saved flag
+        customer = new Customer();
+        isSaved = true;
+        await OnSave.InvokeAsync(isSaved);
+    }
+
+    private void Cancel()
+    {
+        // Reset the form fields and clear any validation errors
+        customer = new Customer();
+        isSaved = false;
+        OnSave.InvokeAsync(isSaved);
+    }
+}

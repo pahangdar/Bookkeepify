@@ -1,0 +1,84 @@
+﻿@page "/customers"
+@attribute [Authorize]
+
+<PageTitle>Customers</PageTitle>
+
+@if (HasAccess)
+{
+    @if (!ShowNewEditPanel)
+    {
+        <button class="btn btn-success btn-lg" @onclick="NewCustomer">
+            <i class="oi oi-plus"></i>&nbsp;New Customer
+        </button>
+        <br />
+        <br />
+    } else
+    {
+        <CustomersNewEdit SelectedCustomer="@selectedCustomer" OnSave="HandleSaveResult" />
+    }
+
+    <CustomersList DesiableButtons="@ShowNewEditPanel"
+                  OnEdit="HandleEditCustomer"
+                  @ref="customersListRef" />
+
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    private bool HasAccess { get; set; } = false;
+
+    private Customer selectedCustomer;
+    private Boolean ShowNewEditPanel = false;
+
+    private CustomersList customersListRef;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+    }
+
+    private void NewCustomer()
+    {
+        ShowNewEditPanel = true;
+        selectedCustomer = null;
+    }
+
+    private async Task HandleEditCustomer(Customer customer)
+    {
+        ShowNewEditPanel = true;
+        selectedCustomer = customer;
+    }
+
+    private async Task HandleSaveResult(bool isSaved)
+    {
+        ShowNewEditPanel = false;
+
+
+        if (isSaved)
+        {
+            // in edit mode there is no need to the following code!
+            if (customersListRef != null)
+            {
+                // Call the RefreshAccounts method of the AccountsList component
+                await customersListRef.RefreshCustomers();
+            }
+        }
+        else
+        {
+            // Cancel was selected
+        }
+    }
+
+}

@@ -1,0 +1,141 @@
+﻿@page "/customers/list"
+@attribute [Authorize]
+
+<PageTitle>Customers</PageTitle>
+<ConfirmationDialog IsVisible="@isConfirmationDialogVisible"
+                    OnConfirm="DeleteConfirmed"
+                    Title="Delete Customer Confirmation"
+                    Message="@deleteMessage" />
+@if (HasAccess)
+{
+    <h3>Customers List</h3>
+
+    @if (customers == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Account</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var customer in customers)
+                {
+                    <tr>
+                        <td>@customer.Name</td>
+                        <td>@customer.Address</td>
+                        <td>@customer.Phone</td>
+                        <td>@customer.Email</td>
+                        <td>@customer.Account.Name</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm"
+                                    @onclick="() => EditCustomer(customer)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Edit"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-pencil"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => ShowConfirmationDialog(customer)"
+                                    data-bs-toggle=" tooltip"
+                                    data-bs-placement="top"
+                                    title="Delete"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@inject CustomerService CustomerService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    [Parameter]
+    public EventCallback<Customer> OnEdit { get; set; }
+    [Parameter]
+    public Boolean DesiableButtons { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+
+    private List<Customer> customers;
+    private Customer selectedCustomer;
+
+    private bool isConfirmationDialogVisible = false;
+    private string deleteMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (DesiableButtons == null)
+        {
+            DesiableButtons = false;
+        }
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+        await RefreshCustomers();
+    }
+
+    private void NewCustomer()
+    {
+        DesiableButtons = true;
+        selectedCustomer = null;
+    }
+
+    private async void EditCustomer(Customer customer)
+    {
+        await OnEdit.InvokeAsync(customer);
+    }
+
+    private void ShowConfirmationDialog(Customer customer)
+    {
+        selectedCustomer = customer;
+        if (selectedCustomer != null)
+        {
+            deleteMessage = $"Are you sure you want to delete '<strong>{selectedCustomer.Name}</strong>' ?";
+            isConfirmationDialogVisible = true;
+        }
+    }
+
+    private async Task DeleteConfirmed(bool isConfirmed)
+    {
+        isConfirmationDialogVisible = false;
+
+        if (isConfirmed)
+        {
+            await CustomerService.DeleteCustomerAsync(selectedCustomer.Id);
+            await RefreshCustomers(); // Refresh Customer list after deletion
+            deleteMessage = "";
+        }
+    }
+
+    public async Task RefreshCustomers()
+    {
+        customers = await CustomerService.GetCustomersAsync();
+    }
+
+
+}

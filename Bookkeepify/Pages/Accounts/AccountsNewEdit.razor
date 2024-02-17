@@ -1,0 +1,136 @@
+﻿@page "/accounts/new-edit"
+@attribute [Authorize]
+
+<PageTitle>@title</PageTitle>
+
+@if (HasAccess)
+{
+
+    <h3>@title</h3>
+
+    @if (isSaved)
+    {
+        <p><em>Account saved successfully!</em></p>
+    }
+
+    @if (accountTypes == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+
+        <EditForm Model="@account" OnValidSubmit="SaveAccount">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="code">Code:</label>
+                <div class="col-lg-4">
+                    <InputText class="form-control" @bind-Value="@account.Code" />
+                    <ValidationMessage For="@(() => account.Code)" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <InputText class="form-control" @bind-Value="@account.Name" />
+                <ValidationMessage For="@(() => account.Name)" />
+            </div>
+
+            <div class="form-group">
+                <label for="AccountType">Account Type:</label>
+                <div class="col-lg-4">
+                    <select class="form-control" @bind="@account.AccountTypeId" required>
+                        <option value="" selected disabled>Choose...</option>
+                        @foreach (var accountType in accountTypes)
+                        {
+                            <option value="@accountType.Id">@accountType.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group mt-4  mb-4">
+                <button type="submit" class="btn btn-primary mr-2">Save</button>
+                <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            </div>
+            <hr />
+        </EditForm>
+    }
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@inject AccountService AccountService
+@inject AccountTypeService AccountTypeService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    [Parameter]
+    public EventCallback<bool> OnSave { get; set; }
+    [Parameter]
+    public Account SelectedAccount { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+
+    private Account account = new Account();
+    private List<AccountType> accountTypes;
+    private bool isSaved = false;
+    private bool isEditMode => SelectedAccount != null;
+    private string title;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+
+        accountTypes = await AccountTypeService.GetAccountTypesAsync();
+
+        if (isEditMode)
+        {
+            title = "Edit Account";
+            //account = SelectedAccount;
+            account.Name = SelectedAccount.Name;
+            account.Code = SelectedAccount.Code;
+            account.AccountTypeId = SelectedAccount.AccountTypeId;
+        } else
+        {
+            title = "Add New Account";
+        }
+    }
+
+    private async Task SaveAccount()
+    {  
+        if (isEditMode)
+        {
+            SelectedAccount.Name = account.Name;
+            SelectedAccount.Code = account.Code;
+            SelectedAccount.AccountTypeId = account.AccountTypeId;
+            await AccountService.UpdateAccountAsync(SelectedAccount);
+        }
+        else
+        {
+            account.Balance = 0;
+            await AccountService.AddAccountAsync(account);
+        }
+        // Clear the form and set the saved flag
+        account = new Account();
+        isSaved = true;
+        await OnSave.InvokeAsync(isSaved);
+    }
+
+    private void Cancel()
+    {
+        // Reset the form fields and clear any validation errors
+        account = new Account();
+        isSaved = false;
+        OnSave.InvokeAsync(isSaved);
+    }
+}

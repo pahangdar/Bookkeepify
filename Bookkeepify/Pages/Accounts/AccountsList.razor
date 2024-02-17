@@ -1,0 +1,135 @@
+﻿@page "/accounts/list"
+@attribute [Authorize]
+
+<PageTitle>Accounts List</PageTitle>
+
+<ConfirmationDialog IsVisible="@isConfirmationDialogVisible"
+                    OnConfirm="DeleteConfirmed"
+                    Title="Delete Account Confirmation"
+                    Message="@deleteMessage" />
+
+@if (HasAccess)
+{
+
+    <h3>Accounts List</h3>
+
+    @if (accounts == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Balance</th>
+                    <th>Type</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var account in accounts)
+                {
+                    <tr>
+                        <td>@account.Code</td>
+                        <td>@account.Name</td>
+                        <td>@account.Balance</td>
+                        <td>@account.AccountType.Name</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm"
+                                    @onclick="() => EditAccount(account)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Edit"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-pencil"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => ShowConfirmationDialog(account)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Delete"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-trash"></i>
+                            </button>
+
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@using Microsoft.AspNetCore.Identity
+@inject AccountService AccountService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code {
+    [Parameter]
+    public EventCallback<Account> OnEdit { get; set; }
+    [Parameter]
+    public Boolean DesiableButtons { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+
+    private List<Account> accounts;
+    private Account selectedAccount;
+    private bool isConfirmationDialogVisible = false;
+    private string deleteMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (DesiableButtons == null)
+        {
+            DesiableButtons = false;
+        }
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+        await RefreshAccounts();
+    }
+
+    private async void EditAccount(Account account)
+    {
+        await OnEdit.InvokeAsync(account);
+    }
+
+    private void ShowConfirmationDialog(Account account)
+    {
+        if (account != null)
+        {
+            deleteMessage = $"Are you sure you want to delete '<strong>{account.Code}-{account.Name}</strong>' ?";
+            selectedAccount = account;
+            isConfirmationDialogVisible = true;
+        }
+    }
+
+    private async Task DeleteConfirmed(bool isConfirmed)
+    {
+        isConfirmationDialogVisible = false;
+
+        if (isConfirmed)
+        {
+            await AccountService.DeleteAccountAsync(selectedAccount.Id);
+            await RefreshAccounts(); // Refresh account list after deletion
+            deleteMessage = "";
+        }
+    }
+
+    public async Task RefreshAccounts()
+    {
+        accounts = await AccountService.GetAccountsAsync();
+    }
+
+}

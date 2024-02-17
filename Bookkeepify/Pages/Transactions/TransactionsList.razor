@@ -1,24 +1,15 @@
-﻿@page "/transactions"
+﻿@page "/transactions/list"
 @attribute [Authorize]
 
-<PageTitle>Transactions</PageTitle>
+<PageTitle>Transactions List</PageTitle>
 
 <ConfirmationDialog IsVisible="@isConfirmationDialogVisible"
                     OnConfirm="DeleteConfirmed"
                     Title="Delete Transaction Confirmation"
                     Message="@deleteMessage" />
-
-@if (ShowNewEditPanel)
+@if (HasAccess)
 {
-    <TransactionsNewEdit SelectedTransaction="@selectedTransaction" OnSave="HandleSaveResult" />
-}
-else
-{
-    <h1>Transactions</h1>
-
-    <button class="btn btn-success btn-lg" @onclick="NewTransaction">
-        <i class="oi oi-plus"></i>&nbsp;New Transaction
-    </button>
+    <h3>Transactions List</h3>
 
     @if (transactions == null)
     {
@@ -50,7 +41,7 @@ else
                                     data-bs-toggle="tooltip"
                                     data-bs-placement="top"
                                     title="Edit"
-                                    disabled="@ShowNewEditPanel">
+                                    disabled="@DesiableButtons">
                                 <i class="oi oi-pencil"></i>
                             </button>
                             <button class="btn btn-danger btn-sm"
@@ -58,7 +49,7 @@ else
                                     data-bs-toggle="tooltip"
                                     data-bs-placement="top"
                                     title="Delete"
-                                    disabled="@ShowNewEditPanel">
+                                    disabled="@DesiableButtons">
                                 <i class="oi oi-trash"></i>
                             </button>
                         </td>
@@ -68,47 +59,55 @@ else
         </table>
     }
 }
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
 
 
 
 @using Bookkeepify.Models
 @using Bookkeepify.Services
-@using Microsoft.EntityFrameworkCore
 @inject TransactionService TransactionService
 @inject TransactionDetailService TransactionDetailService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @code {
+    [Parameter]
+    public EventCallback<Transaction> OnEdit { get; set; }
+    [Parameter]
+    public Boolean DesiableButtons { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+
     private List<Transaction> transactions;
     private Transaction selectedTransaction;
-
-    private Boolean ShowNewEditPanel = false;
-
     private bool isConfirmationDialogVisible = false;
     private string deleteMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
+        if (DesiableButtons == null)
+        {
+            DesiableButtons = false;
+        }
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
         await RefreshTransactions();
     }
 
-    private void NewTransaction()
+    private async void EditTransaction(Transaction transaction)
     {
-        selectedTransaction = null;
-        ShowNewEditPanel = true;
-    }
-
-    private void EditTransaction(Transaction transaction)
-    {
-        selectedTransaction = transaction;
-        ShowNewEditPanel = true;
+        await OnEdit.InvokeAsync(transaction);
     }
 
     private void ShowConfirmationDialog(Transaction transaction)
     {
-        selectedTransaction = transaction;
-        if (selectedTransaction != null)
+        if (transaction != null)
         {
             deleteMessage = $"Are you sure you want to delete '<strong>{selectedTransaction.Id}-{selectedTransaction.Description}</strong>' ?";
+            selectedTransaction = transaction;
             isConfirmationDialogVisible = true;
         }
     }
@@ -126,24 +125,9 @@ else
         }
     }
 
-    private async Task RefreshTransactions()
+    public async Task RefreshTransactions()
     {
         transactions = await TransactionService.GetTransactionsAsync();
-    }
-
-    private async Task HandleSaveResult(bool isSaved)
-    {
-        ShowNewEditPanel = false;
-
-        if (isSaved)
-        {
-            await RefreshTransactions();
-            StateHasChanged(); // Notify Blazor to re-render the UI
-        }
-        else
-        {
-            // Cancel was selected
-        }
     }
 
 }

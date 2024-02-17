@@ -1,4 +1,4 @@
-﻿@page "/transactionsdetails-newedit"
+﻿@page "/transactions/details/newedit"
 @attribute [Authorize]
 
 <Toast />
@@ -111,6 +111,7 @@ else
         {
             NavigationManager.NavigateTo($"/transactions");
         }
+
         isEditMode = (transaction.Id >0) ? true: false;
         accounts = await AccountService.GetAccountsAsync();
         details = new List<TransactionDetail>();
@@ -168,16 +169,15 @@ else
             return;
         }
 
-        if (!isEditMode)
-        {
-            await TransactionService.AddTransactionAsync(transaction);
-        }
-        else
+        if (isEditMode)
         {
             await TransactionService.UpdateTransactionAsync(transaction);
         }
-
-        int transactionId = transaction.Id;
+        else
+        {
+            await TransactionService.AddTransactionAsync(transaction);
+        }
+        int transactionId = transaction.Id; ;
 
 
         // Assign the obtained transaction ID to the TransactionId property of each TransactionDetail
