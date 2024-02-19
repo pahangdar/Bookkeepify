@@ -1,8 +1,6 @@
 ﻿@page "/transactions/details/newedit"
 @attribute [Authorize]
 
-<Toast />
-
 <Alert IsVisible="@isAlertVisible"
        Title="@errorTitle"
        Message="@errorMessage" />
@@ -15,10 +13,6 @@
 <PageTitle>@title</PageTitle>
 
 <h3>@title :@transaction.Description</h3>
-@if (isSaved)
-{
-    <p><em>Transaction saved successfully!</em></p>
-}
 
 @if (accounts == null)
 {
@@ -26,52 +20,11 @@
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Account</th>
-                <th>Debit</th>
-                <th>Credit</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var tdetail in details)
-            {
-                <tr>
-                    <td>@tdetail.Account.Name</td>
-                    <td>@tdetail.DebitAmount</td>
-                    <td>@tdetail.CreditAmount</td>
-                    <td>
-                        <!--
-                        <button class="btn btn-primary btn-sm" @onclick="() => DeleteTransactionDetail(tdetail)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
-                            <i class="oi oi-pencil"></i>
-                        </button>
-                        -->
-                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteTransactionDetail(tdetail)" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
-                            <i class="oi oi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            }
-            <tr>
-                <th>Overall Sum:</th>
-                <th>@sumDebit</th>
-                <th>@SumCredit</th>
-                <th></th>
-            </tr>
-            <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td>
-                    <button class="btn btn-success btn-sm" @onclick="OpenAddModal" data-bs-toggle="tooltip" data-bs-placement="top" title="Add">
-                        <i class="oi oi-plus"></i>
-                    </button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <TransactionsDetailsList TransactionDetails="@details" HasDelete="@hasDelete"/>
+
+    <button class="btn btn-success btn-sm" @onclick="OpenAddModal" data-bs-toggle="tooltip" data-bs-placement="top" title="Add">
+        <i class="oi oi-plus"></i>
+    </button>
 
     <div class="form-group mt-4  mb-4">
         <button type="submit" class="btn btn-primary mr-2" @onclick="SaveTransaction">Save</button>
@@ -83,17 +36,16 @@ else
 @using Bookkeepify.Interfaces
 @using Bookkeepify.Models
 @using Bookkeepify.Services
-@using Microsoft.EntityFrameworkCore
 @inject NavigationManager NavigationManager
 @inject AccountService AccountService
 @inject TransactionService TransactionService
 @inject TransactionDetailService TransactionDetailService
-@inject ToastService toastService
 
 @code {
     private Transaction transaction;
     private List<Account> accounts;
     private List<TransactionDetail> details;
+    private bool hasDelete = true;
     private bool isSaved = false;
     private bool isEditMode;
     private string title;

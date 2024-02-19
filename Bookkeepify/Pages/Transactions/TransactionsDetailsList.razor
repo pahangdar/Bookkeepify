@@ -1,0 +1,91 @@
+﻿@page "/transactions/details/list"
+@attribute [Authorize]
+
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Account</th>
+                <th>Debit</th>
+                <th>Credit</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var tdetail in TransactionDetails)
+            {
+            @if (tdetail != null)
+            {
+                <tr>
+                    @if (@tdetail.Account != null)
+                    {
+                        <td>@tdetail.Account.Name</td>
+                    } else
+                    {
+                        <td>@tdetail.AccountId</td>
+                    }
+                    <td>@tdetail.DebitAmount</td>
+                    <td>@tdetail.CreditAmount</td>
+                    @if (HasDelete)
+                    {
+                        <td>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteTransactionDetail(tdetail)" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                                <i class="oi oi-trash"></i>
+                            </button>
+                        </td>
+                    }
+                </tr>
+            }
+            }
+            <tr>
+                <th>Overall Sum:</th>
+                <th>@sumDebit</th>
+                <th>@SumCredit</th>
+                <th></th>
+            </tr>
+        </tbody>
+    </table>
+
+@using Bookkeepify.Models
+
+@code {
+    [Parameter]
+    public List<TransactionDetail> TransactionDetails { get; set; }
+    [Parameter]
+    public bool HasDelete { get; set; }
+
+    private decimal sumDebit, SumCredit;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        if(TransactionDetails == null)
+        {
+            TransactionDetails = new List<TransactionDetail>();
+        }
+        SumDebitCredit();
+    }
+
+    private async Task DeleteTransactionDetail(TransactionDetail detail)
+    {
+        TransactionDetails.Remove(detail);
+        SumDebitCredit();
+    }
+
+    private void SumDebitCredit()
+    {
+        SumCredit = 0;
+        sumDebit = 0;
+        if (TransactionDetails == null)
+        {
+            return;
+        }
+
+        foreach (var dt in TransactionDetails)
+        {
+            SumCredit += dt.CreditAmount;
+            sumDebit += dt.DebitAmount;
+        }
+    }
+
+}

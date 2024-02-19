@@ -52,6 +52,7 @@
     private bool HasAccess { get; set; } = false;
 
     public Transaction transaction = new Transaction();
+    private Transaction initialTransaction;
     private bool isSaved = false;
     private bool isEditMode => SelectedTransaction != null;
     private string title;
@@ -76,6 +77,12 @@
         }
 
         transaction.UserId = userId;
+
+        initialTransaction = new Transaction
+            {
+                Date = transaction.Date,
+                Description = transaction.Description
+            };
     }
 
     private void Next()
@@ -87,7 +94,9 @@
     private void Cancel()
     {
         // Reset the form fields and clear any validation errors
-        transaction = new Transaction();
+        //transaction = new Transaction();
+        transaction.Date = initialTransaction.Date;
+        transaction.Description = initialTransaction.Description;
         isSaved = false;
         OnSave.InvokeAsync(isSaved);
     }

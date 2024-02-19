@@ -71,15 +71,15 @@ else
         if (isSaved)
         {
             // in edit mode there is no need to the following code!
-            if (accountsListRef != null)
-            {
-                // Call the RefreshAccounts method of the AccountsList component
-                await accountsListRef.RefreshAccounts();
-            }
         }
         else
         {
             // Cancel was selected
+        }
+        if (accountsListRef != null)
+        {
+            // Call the RefreshAccounts method of the AccountsList component
+            await accountsListRef.RefreshAccounts();
         }
     }
 

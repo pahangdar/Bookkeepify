@@ -32,7 +32,7 @@
             <tbody>
                 @foreach (var account in accounts)
                 {
-                    <tr>
+                    <tr class="@(selectedAccount != null && selectedAccount.Id == account.Id ? "alert-info" : "")">
                         <td>@account.Code</td>
                         <td>@account.Name</td>
                         <td>@account.Balance</td>
@@ -102,7 +102,11 @@ else
 
     private async void EditAccount(Account account)
     {
-        await OnEdit.InvokeAsync(account);
+        if (account != null)
+        {
+            selectedAccount = account;
+            await OnEdit.InvokeAsync(account);
+        }
     }
 
     private void ShowConfirmationDialog(Account account)
@@ -125,11 +129,13 @@ else
             await RefreshAccounts(); // Refresh account list after deletion
             deleteMessage = "";
         }
+        selectedAccount = null;
     }
 
     public async Task RefreshAccounts()
     {
         accounts = await AccountService.GetAccountsAsync();
+        selectedAccount = null;
     }
 
 }

@@ -30,7 +30,7 @@
             <tbody>
                 @foreach (var customer in customers)
                 {
-                    <tr>
+                    <tr class="@(selectedCustomer != null && selectedCustomer.Id == customer.Id ? "alert-info" : "")">
                         <td>@customer.Name</td>
                         <td>@customer.Address</td>
                         <td>@customer.Phone</td>
@@ -107,15 +107,19 @@ else
 
     private async void EditCustomer(Customer customer)
     {
-        await OnEdit.InvokeAsync(customer);
+        if (customer != null)
+        {
+            selectedCustomer = customer;
+            await OnEdit.InvokeAsync(customer);
+        }
     }
 
     private void ShowConfirmationDialog(Customer customer)
     {
-        selectedCustomer = customer;
-        if (selectedCustomer != null)
+        if (customer != null)
         {
-            deleteMessage = $"Are you sure you want to delete '<strong>{selectedCustomer.Name}</strong>' ?";
+            deleteMessage = $"Are you sure you want to delete '<strong>{customer.Name}</strong>' ?";
+            selectedCustomer = customer;
             isConfirmationDialogVisible = true;
         }
     }
@@ -130,11 +134,13 @@ else
             await RefreshCustomers(); // Refresh Customer list after deletion
             deleteMessage = "";
         }
+        selectedCustomer = null;
     }
 
     public async Task RefreshCustomers()
     {
         customers = await CustomerService.GetCustomersAsync();
+        selectedCustomer = null;
     }
 
 

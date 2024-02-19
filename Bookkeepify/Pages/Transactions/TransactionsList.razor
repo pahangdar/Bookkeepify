@@ -30,12 +30,22 @@
             <tbody>
                 @foreach (var transaction in transactions)
                 {
-                    <tr>
+                    <!--<tr @onclick="() => ToggleDetails(transaction)" class="@(selectedTransaction != null && selectedTransaction.Id == transaction.Id ? "alert-info" : "")">-->
+                    <tr class="@(selectedTransaction != null && selectedTransaction.Id == transaction.Id ? "alert-info" : "")">
                         <td>@transaction.Id</td>
                         <td>@transaction.Date</td>
                         <td>@transaction.Description</td>
                         <td>@transaction.TransactionType.Name</td>
                         <td>
+                            <button class="btn btn-info btn-sm"
+                                    @onclick:stopPropagation
+                                    @onclick="() => ToggleDetails(transaction)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Details"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-eye"></i>
+                            </button>
                             <button class="btn btn-primary btn-sm"
                                     @onclick="() => EditTransaction(transaction)"
                                     data-bs-toggle="tooltip"
@@ -54,6 +64,15 @@
                             </button>
                         </td>
                     </tr>
+                    @if (selectedTransaction != null && selectedTransaction.Id == transaction.Id)
+                    {
+                        <tr>
+                            <td colspan="5">
+                                <!-- Set colspan to match the number of columns in your table -->
+                                <TransactionsDetailsList TransactionDetails="@transactionDetails" HasDelete="false" />
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
@@ -73,6 +92,7 @@ else
 @inject AuthorizationService AuthorizationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
+
 @code {
     [Parameter]
     public EventCallback<Transaction> OnEdit { get; set; }
@@ -82,6 +102,7 @@ else
     private bool HasAccess { get; set; } = false;
 
     private List<Transaction> transactions;
+    private List<TransactionDetail> transactionDetails;
     private Transaction selectedTransaction;
     private bool isConfirmationDialogVisible = false;
     private string deleteMessage = "";
@@ -102,12 +123,13 @@ else
         await OnEdit.InvokeAsync(transaction);
     }
 
-    private void ShowConfirmationDialog(Transaction transaction)
+    private async Task ShowConfirmationDialog(Transaction transaction)
     {
         if (transaction != null)
         {
-            deleteMessage = $"Are you sure you want to delete '<strong>{selectedTransaction.Id}-{selectedTransaction.Description}</strong>' ?";
+            deleteMessage = $"Are you sure you want to delete '<strong>{transaction.Id}-{transaction.Description}</strong>' ?";
             selectedTransaction = transaction;
+            transactionDetails = await TransactionDetailService.GetTransactionDetailsAsync(transaction.Id);
             isConfirmationDialogVisible = true;
         }
     }
@@ -123,8 +145,22 @@ else
             await RefreshTransactions(); // Refresh transaction list after deletion
             deleteMessage = "";
         }
+        selectedTransaction = null;
+        transactionDetails = null;
     }
 
+    private async Task ToggleDetails(Transaction transaction)
+    {
+        if (selectedTransaction != null && selectedTransaction.Id == transaction.Id)
+        {
+            selectedTransaction = null; // Hide details if already selected
+        }
+        else
+        {
+            selectedTransaction = transaction; // Show details for selected transaction
+            transactionDetails = await TransactionDetailService.GetTransactionDetailsAsync(transaction.Id);
+        }
+    }
     public async Task RefreshTransactions()
     {
         transactions = await TransactionService.GetTransactionsAsync();

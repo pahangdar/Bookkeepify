@@ -18,11 +18,11 @@ namespace Bookkeepify.Services
         public async Task<List<TransactionDetail>> GetTransactionDetailsAsync(int transactionId)
         {
             return await _context.TransactionDetails
-                .Include(a => a.TransactionMethod)
+                .Include(td => td.Account) // Eager load the associated account
+                .Include(td => td.TransactionMethod)
                 .Where(td => td.TransactionId == transactionId)
                 .ToListAsync();
         }
-
         public async Task AddTransactionDetailAsync(TransactionDetail transactionDetail)
         {
             _context.TransactionDetails.Add(transactionDetail);
