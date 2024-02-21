@@ -24,7 +24,10 @@ namespace Bookkeepify.Services
 
         public async Task<List<Transaction>> GetTransactionsAsync()
         {
-            return await _context.Transactions.Include(a => a.TransactionType).ToListAsync();
+            return await _context.Transactions
+                                 .Include(a => a.TransactionType)
+                                 .Include(a => a.Customer)
+                                 .ToListAsync();
         }
 
         public async Task AddTransactionAsync(Transaction transaction)

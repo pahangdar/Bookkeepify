@@ -1,0 +1,141 @@
+﻿@page "/products/list"
+@attribute [Authorize]
+
+<PageTitle>Products List</PageTitle>
+
+<ConfirmationDialog IsVisible="@isConfirmationDialogVisible"
+                    OnConfirm="DeleteConfirmed"
+                    Title="Delete Product Confirmation"
+                    Message="@deleteMessage" />
+
+@if (HasAccess)
+{
+
+    <h3>Products List</h3>
+
+    @if (products == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Type</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in products)
+                {
+                    <tr class="@(selectedProduct != null && selectedProduct.Id == product.Id ? "alert-info" : "")">
+                        <td>@product.Id</td>
+                        <td>@product.Name</td>
+                        <td>@product.Price</td>
+                        <td>@product.ProductType.Name</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm"
+                                    @onclick="() => EditProduct(product)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Edit"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-pencil"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => ShowConfirmationDialog(product)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Delete"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-trash"></i>
+                            </button>
+
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@using Microsoft.AspNetCore.Identity
+@inject ProductService ProductService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code {
+    [Parameter]
+    public EventCallback<Product> OnEdit { get; set; }
+    [Parameter]
+    public Boolean DesiableButtons { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+
+    private List<Product> products;
+    private Product selectedProduct;
+    private bool isConfirmationDialogVisible = false;
+    private string deleteMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (DesiableButtons == null)
+        {
+            DesiableButtons = false;
+        }
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+        await RefreshProducts();
+    }
+
+    private async void EditProduct(Product product)
+    {
+        if (product != null)
+        {
+            selectedProduct = product;
+            await OnEdit.InvokeAsync(product);
+        }
+    }
+
+    private void ShowConfirmationDialog(Product product)
+    {
+        if (product != null)
+        {
+            deleteMessage = $"Are you sure you want to delete '<strong>{product.Id}-{product.Name}</strong>' ?";
+            selectedProduct = product;
+            isConfirmationDialogVisible = true;
+        }
+    }
+
+    private async Task DeleteConfirmed(bool isConfirmed)
+    {
+        isConfirmationDialogVisible = false;
+
+        if (isConfirmed)
+        {
+            await ProductService.DeleteProductAsync(selectedProduct.Id);
+            await RefreshProducts(); // Refresh product list after deletion
+            deleteMessage = "";
+        }
+        selectedProduct = null;
+    }
+
+    public async Task RefreshProducts()
+    {
+        products = await ProductService.GetProductsAsync();
+        selectedProduct = null;
+    }
+
+}

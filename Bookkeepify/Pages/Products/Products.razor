@@ -1,0 +1,86 @@
+﻿@page "/products"
+@attribute [Authorize]
+
+<PageTitle>Products</PageTitle>
+
+@if (HasAccess)
+{
+
+    @if (!ShowNewEditPanel)
+    {
+        <button class="btn btn-success btn-lg" @onclick="NewProduct">
+            <i class="oi oi-plus"></i>&nbsp;New Product
+        </button>
+        <br />
+        <br />
+    }
+    else
+    {
+        <ProductsNewEdit SelectedProduct="@selectedProduct" OnSave="HandleSaveResult" />
+    }
+
+    <ProductsList DesiableButtons="@ShowNewEditPanel"
+                  OnEdit="HandleEditProduct"
+                  @ref="productsListRef" />
+
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@using Microsoft.AspNetCore.Identity
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code {
+    private bool HasAccess { get; set; } = false;
+
+    private Product selectedProduct;
+    private Boolean ShowNewEditPanel = false;
+
+    private ProductsList productsListRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+    }
+
+    private void NewProduct()
+    {
+        ShowNewEditPanel = true;
+        selectedProduct = null;
+    }
+
+    private async Task HandleEditProduct(Product product)
+    {
+        ShowNewEditPanel = true;
+        selectedProduct = product;
+    }
+
+    private async Task HandleSaveResult(bool isSaved)
+    {
+        ShowNewEditPanel = false;
+
+
+        if (isSaved)
+        {
+            // in edit mode there is no need to the following code!
+        }
+        else
+        {
+            // Cancel was selected
+        }
+        if (productsListRef != null)
+        {
+            // Call the RefreshProducts method of the ProductsList component
+            await productsListRef.RefreshProducts();
+        }
+    }
+
+}

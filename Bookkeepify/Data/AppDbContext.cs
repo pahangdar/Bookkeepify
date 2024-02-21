@@ -26,6 +26,8 @@ namespace Bookkeepify.Data
         public DbSet<TransactionType> TransactionTypes  { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<TransactionDetail> TransactionDetails { get; set; }
+        public DbSet<ProductType> ProductTypes { get; set; }
+        public DbSet<Product> Products { get; set; }
 
     }
 }

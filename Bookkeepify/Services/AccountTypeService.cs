@@ -1,8 +1,6 @@
 ﻿using Bookkeepify.Data;
 using Bookkeepify.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Bookkeepify.Services
 {

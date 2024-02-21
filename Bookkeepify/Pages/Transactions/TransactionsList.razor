@@ -23,6 +23,7 @@
                     <th>Ref#</th>
                     <th>Date</th>
                     <th>Description</th>
+                    <th>Customer</th>
                     <th>Type</th>
                     <th></th>
                 </tr>
@@ -35,6 +36,14 @@
                         <td>@transaction.Id</td>
                         <td>@transaction.Date</td>
                         <td>@transaction.Description</td>
+                        @if (transaction.Customer != null)
+                        {
+                            <td>@transaction.Customer.Name</td>
+                        }
+                        else
+                        {
+                            <td>---</td>   
+                        }
                         <td>@transaction.TransactionType.Name</td>
                         <td>
                             <button class="btn btn-info btn-sm"
