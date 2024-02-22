@@ -1,0 +1,176 @@
+﻿@page "/invoices/list"
+@attribute [Authorize]
+
+<PageTitle>Invoices List</PageTitle>
+
+<ConfirmationDialog IsVisible="@isConfirmationDialogVisible"
+                    OnConfirm="DeleteConfirmed"
+                    Title="Delete Invoice Confirmation"
+                    Message="@deleteMessage" />
+@if (HasAccess)
+{
+    <h3>Invoices List</h3>
+
+    @if (invoices == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ref#</th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Customer</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var invoice in invoices)
+                {
+                    <!--<tr @onclick="() => ToggleDetails(invoice)" class="@(selectedInvoice != null && selectedInvoice.Id == invoice.Id ? "alert-info" : "")">-->
+                    <tr class="@(selectedInvoice != null && selectedInvoice.Id == invoice.Id ? "alert-info" : "")">
+                        <td>@invoice.Id</td>
+                        <td>@invoice.Date</td>
+                        <td>@invoice.Description</td>
+                        @if (invoice.Customer != null)
+                        {
+                            <td>@invoice.Customer.Name</td>
+                        }
+                        else
+                        {
+                            <td>---</td>   
+                        }
+                        <td>
+                            <button class="btn btn-info btn-sm"
+                                    @onclick:stopPropagation
+                                    @onclick="() => ToggleDetails(invoice)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Details"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-eye"></i>
+                            </button>
+                            <button class="btn btn-primary btn-sm"
+                                    @onclick="() => EditInvoice(invoice)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Edit"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-pencil"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => ShowConfirmationDialog(invoice)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Delete"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    @if (selectedInvoice != null && selectedInvoice.Id == invoice.Id)
+                    {
+                        <tr>
+                            <td colspan="5">
+                                <!-- Set colspan to match the number of columns in your table -->
+                                <InvoicesDetailsList InvoiceDetails="@invoiceDetails" HasDelete="false" />
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@inject InvoiceService InvoiceService
+@inject InvoiceDetailService InvoiceDetailService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    [Parameter]
+    public EventCallback<Invoice> OnEdit { get; set; }
+    [Parameter]
+    public Boolean DesiableButtons { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+
+    private List<Invoice> invoices;
+    private List<InvoiceDetail> invoiceDetails;
+    private Invoice selectedInvoice;
+    private bool isConfirmationDialogVisible = false;
+    private string deleteMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (DesiableButtons == null)
+        {
+            DesiableButtons = false;
+        }
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+        await RefreshInvoices();
+    }
+
+    private async void EditInvoice(Invoice invoice)
+    {
+        await OnEdit.InvokeAsync(invoice);
+    }
+
+    private async Task ShowConfirmationDialog(Invoice invoice)
+    {
+        if (invoice != null)
+        {
+            deleteMessage = $"Are you sure you want to delete '<strong>{invoice.Id}-{invoice.Description}</strong>' ?";
+            selectedInvoice = invoice;
+            invoiceDetails = await InvoiceDetailService.GetInvoiceDetailsAsync(invoice.Id);
+            isConfirmationDialogVisible = true;
+        }
+    }
+
+    private async Task DeleteConfirmed(bool isConfirmed)
+    {
+        isConfirmationDialogVisible = false;
+
+        if (isConfirmed)
+        {
+            await InvoiceDetailService.DeleteInvoiceDetailsAsync(selectedInvoice.Id);
+            await InvoiceService.DeleteInvoiceAsync(selectedInvoice.Id);
+            await RefreshInvoices(); // Refresh invoice list after deletion
+            deleteMessage = "";
+        }
+        selectedInvoice = null;
+        invoiceDetails = null;
+    }
+
+    private async Task ToggleDetails(Invoice invoice)
+    {
+        if (selectedInvoice != null && selectedInvoice.Id == invoice.Id)
+        {
+            selectedInvoice = null; // Hide details if already selected
+        }
+        else
+        {
+            selectedInvoice = invoice; // Show details for selected invoice
+            invoiceDetails = await InvoiceDetailService.GetInvoiceDetailsAsync(invoice.Id);
+        }
+    }
+    public async Task RefreshInvoices()
+    {
+        invoices = await InvoiceService.GetInvoicesAsync();
+    }
+
+}
