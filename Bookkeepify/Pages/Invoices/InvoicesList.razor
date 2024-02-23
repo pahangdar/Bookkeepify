@@ -1,7 +1,7 @@
 ﻿@page "/invoices/list"
 @attribute [Authorize]
 
-<PageTitle>Invoices List</PageTitle>
+<PageTitle>@SelectedInvoiceType List</PageTitle>
 
 <ConfirmationDialog IsVisible="@isConfirmationDialogVisible"
                     OnConfirm="DeleteConfirmed"
@@ -9,7 +9,7 @@
                     Message="@deleteMessage" />
 @if (HasAccess)
 {
-    <h3>Invoices List</h3>
+    <h3>@SelectedInvoiceType List</h3>
 
     @if (invoices == null)
     {
@@ -24,6 +24,7 @@
                     <th>Date</th>
                     <th>Description</th>
                     <th>Customer</th>
+                    <th>Type</th>
                     <th></th>
                 </tr>
             </thead>
@@ -43,6 +44,7 @@
                         {
                             <td>---</td>   
                         }
+                        <td>@invoice.InvoiceType</td>
                         <td>
                             <button class="btn btn-info btn-sm"
                                     @onclick:stopPropagation
@@ -105,6 +107,8 @@ else
     public EventCallback<Invoice> OnEdit { get; set; }
     [Parameter]
     public Boolean DesiableButtons { get; set; }
+    [Parameter]
+    public InvoiceType SelectedInvoiceType { get; set; }
 
     private bool HasAccess { get; set; } = false;
 
@@ -123,6 +127,12 @@ else
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
         await RefreshInvoices();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        //await RefreshInvoices();
+        //StateHasChanged();
     }
 
     private async void EditInvoice(Invoice invoice)
@@ -170,7 +180,7 @@ else
     }
     public async Task RefreshInvoices()
     {
-        invoices = await InvoiceService.GetInvoicesAsync();
+        invoices = await InvoiceService.GetInvoicesAsync(SelectedInvoiceType);
     }
 
 }

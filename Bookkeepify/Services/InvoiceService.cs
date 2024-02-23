@@ -20,11 +20,21 @@ namespace Bookkeepify.Services
             _context = context;
         }
 
-        public async Task<List<Invoice>> GetInvoicesAsync()
+        public async Task<List<Invoice>> GetInvoicesAsync(InvoiceType? invoiceType)
         {
-            return await _context.Invoices
-                                 .Include(a => a.Customer)
-                                 .ToListAsync();
+            if (invoiceType == null)
+            {
+                return await _context.Invoices
+                                     .Include(a => a.Customer)
+                                     .ToListAsync();
+            }
+            else
+            {
+                return await _context.Invoices
+                                     .Include(a => a.Customer)
+                                     .Where(a => a.InvoiceType == invoiceType)
+                                     .ToListAsync();
+            }
         }
 
         public async Task AddInvoiceAsync(Invoice invoice)
