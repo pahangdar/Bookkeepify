@@ -1,0 +1,163 @@
+﻿@page "/invoices/details/newedit"
+@attribute [Authorize]
+
+<Alert IsVisible="@isAlertVisible"
+       Title="@errorTitle"
+       Message="@errorMessage" />
+
+
+<InvoicesDetailAddModal IsVisible="@showAddDetailModal"
+                           OnAdd="AddInvoiceDetail"
+                           ProductsList="@products" />
+
+<PageTitle>@title</PageTitle>
+
+<h3>@title :@invoice.Date.ToString("MM/dd/yyyy"), @invoice.Customer.Name</h3>
+
+@if (products == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <InvoicesDetailsList InvoiceDetails="@details" HasDelete="@hasDelete"/>
+
+    <button class="btn btn-success btn-sm" @onclick="OpenAddModal" data-bs-toggle="tooltip" data-bs-placement="top" title="Add">
+        <i class="oi oi-plus"></i>
+    </button>
+
+    <div class="form-group mt-4  mb-4">
+        <button type="submit" class="btn btn-primary mr-2" @onclick="SaveInvoice">Save</button>
+        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+    </div>
+    <hr />
+}
+
+@using Bookkeepify.Interfaces
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@inject NavigationManager NavigationManager
+@inject ProductService ProductService
+@inject InvoiceService InvoiceService
+@inject InvoiceDetailService InvoiceDetailService
+
+@code {
+    private Invoice invoice;
+    private List<Product> products;
+    private List<InvoiceDetail> details;
+    private bool hasDelete = true;
+    private bool isSaved = false;
+    private bool isEditMode;
+    private string title;
+    private decimal sumInvoice;
+    private bool showAddDetailModal = false;
+    private bool isAlertVisible = false;
+    private string errorMessage;
+    private string errorTitle;
+    private int count = 0;
+    private InvoiceType selectedInvoiceType { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        invoice = InvoiceService.Invoice;
+        if (invoice == null)
+        {
+            NavigationManager.NavigateTo($"/invoices");
+        }
+
+        isEditMode = (invoice.Id >0) ? true: false;
+        products = await ProductService.GetProductsAsync();
+        details = new List<InvoiceDetail>();
+        selectedInvoiceType = invoice.InvoiceType;
+
+        if (isEditMode)
+        {
+            title = "Edit Invoice Details";
+            details = await InvoiceDetailService.GetInvoiceDetailsAsync(invoice.Id);
+        }
+        else
+        {
+            title = "Add Invoice Details";
+        }
+
+        SumInvoice();
+    }
+
+    private async Task DeleteInvoiceDetail(InvoiceDetail detail)
+    {
+        details.Remove(detail);
+        SumInvoice();
+    }
+
+    private void OpenAddModal()
+    {
+        showAddDetailModal = true;
+    }
+
+    private async Task SaveInvoice()
+    {
+        errorMessage = "";
+        isAlertVisible = false;
+        if (details == null || details.Count == 0)
+        {
+            count++;
+            errorMessage = "There are no Details";
+        } else
+        {
+            //decimal totalDebit = details.Sum(d => d.DebitAmount);
+            //decimal totalCredit = details.Sum(d => d.CreditAmount);
+
+            //if (totalDebit <= 0 || totalCredit <= 0 || totalDebit != totalCredit)
+            //{
+            //    count++;
+            //    errorMessage = "Sum of Debit is not equal to sum of Credit";
+            //}
+        }
+
+
+        if (errorMessage != "")
+        {
+            //toastService.ShowError(errorMessage);
+            errorTitle = "Alert " + count.ToString();
+            isAlertVisible = true;
+            return;
+        }
+
+        invoice.TransactionId = 4;
+        var (success, errMessage) = await InvoiceService.SaveInvoiceAndDetailsAsync(invoice, details);
+
+        if (success)
+        {
+            NavigationManager.NavigateTo($"/invoices/{selectedInvoiceType}");
+        } else
+        {
+            errorMessage = errMessage;
+            errorTitle = "Alert " + count.ToString();
+            isAlertVisible = true;
+        }
+    }
+
+
+    private void AddInvoiceDetail(InvoiceDetail detail)
+    {
+        details.Add(detail);
+        SumInvoice();
+        showAddDetailModal = false; // Close the modal after adding
+    }
+
+    private void Cancel()
+    {
+        isSaved = false;
+        NavigationManager.NavigateTo($"/invoices/{selectedInvoiceType}");
+    }
+
+    private void SumInvoice()
+    {
+        sumInvoice = 0;
+        foreach(var dt in details)
+        {
+            sumInvoice += dt.Quantity * dt.Price;
+        }
+    }
+
+}

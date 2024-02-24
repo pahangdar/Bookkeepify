@@ -25,6 +25,7 @@
                     <th>Description</th>
                     <th>Customer</th>
                     <th>Type</th>
+                    <th>Total Amount</th>
                     <th></th>
                 </tr>
             </thead>
@@ -34,7 +35,7 @@
                     <!--<tr @onclick="() => ToggleDetails(invoice)" class="@(selectedInvoice != null && selectedInvoice.Id == invoice.Id ? "alert-info" : "")">-->
                     <tr class="@(selectedInvoice != null && selectedInvoice.Id == invoice.Id ? "alert-info" : "")">
                         <td>@invoice.Id</td>
-                        <td>@invoice.Date</td>
+                        <td>@invoice.Date.ToString("MM/dd/yyyy")</td>
                         <td>@invoice.Description</td>
                         @if (invoice.Customer != null)
                         {
@@ -45,6 +46,7 @@
                             <td>---</td>   
                         }
                         <td>@invoice.InvoiceType</td>
+                        <td>@invoice.TotalAmount.ToString("F2")</td>
                         <td>
                             <button class="btn btn-info btn-sm"
                                     @onclick:stopPropagation
@@ -157,8 +159,9 @@ else
 
         if (isConfirmed)
         {
-            await InvoiceDetailService.DeleteInvoiceDetailsAsync(selectedInvoice.Id);
-            await InvoiceService.DeleteInvoiceAsync(selectedInvoice.Id);
+            //await InvoiceDetailService.DeleteInvoiceDetailsAsync(selectedInvoice.Id);
+            //await InvoiceService.DeleteInvoiceAsync(selectedInvoice.Id);
+            await InvoiceService.DeleteInvoiceAndDetailAsync(selectedInvoice.Id);
             await RefreshInvoices(); // Refresh invoice list after deletion
             deleteMessage = "";
         }

@@ -4,7 +4,6 @@ using Bookkeepify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,10 +11,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bookkeepify.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240222002734_update12database")]
-    partial class update12database
+    partial class AppDbContextModelSnapshot : ModelSnapshot
     {
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -122,7 +120,6 @@ namespace Bookkeepify.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DueDate")
@@ -176,7 +173,7 @@ namespace Bookkeepify.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("invoiceDetails");
+                    b.ToTable("InvoiceDetails");
                 });
 
             modelBuilder.Entity("Bookkeepify.Models.Menu", b =>
@@ -422,7 +419,7 @@ namespace Bookkeepify.Migrations
             modelBuilder.Entity("Bookkeepify.Models.InvoiceDetail", b =>
                 {
                     b.HasOne("Bookkeepify.Models.Invoice", "Invoice")
-                        .WithMany()
+                        .WithMany("InvoiceDetails")
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -507,6 +504,11 @@ namespace Bookkeepify.Migrations
             modelBuilder.Entity("Bookkeepify.Models.AccountType", b =>
                 {
                     b.Navigation("Accounts");
+                });
+
+            modelBuilder.Entity("Bookkeepify.Models.Invoice", b =>
+                {
+                    b.Navigation("InvoiceDetails");
                 });
 
             modelBuilder.Entity("Bookkeepify.Models.Menu", b =>

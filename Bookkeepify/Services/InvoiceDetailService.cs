@@ -77,16 +77,6 @@ namespace Bookkeepify.Services
 
                 foreach (var detail in details)
                 {
-
-                }
-
-                //if (sumDebit != sumCredit || sumDebit <= 0)
-                //{
-                //    return (false, "Sum of DebitAmount must equal sum of CreditAmount and be greater than 0.");
-               // }
-
-                foreach (var detail in details)
-                {
                     _context.InvoiceDetails.Add(detail);
                 }
 

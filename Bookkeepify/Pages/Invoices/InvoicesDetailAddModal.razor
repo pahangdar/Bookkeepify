@@ -1,0 +1,97 @@
+﻿@page "/invoices/details/add-detail"
+@attribute [Authorize]
+
+@if (IsVisible)
+{
+    <div class="modal" tabindex="-1" style="display:block;">
+        <div class="modal-dialog alert alert-success">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Invoice Detail</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@invoiceDetail" OnValidSubmit="AddInvoiceDetail">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+                        <div class="form-group">
+                            <label for="product">Product:</label>
+                            <select class="form-control" @bind="@SelectedProductId" required>
+                                @foreach (var product in ProductsList)
+                                {
+                                    <option value="@product.Id">@product.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="Quantity">Quantity:</label>
+                            <input type="text" class="form-control" @bind="invoiceDetail.Quantity" />
+                            <ValidationMessage For="@(() => invoiceDetail.Quantity)" />
+                        </div>
+                        <div class="form-group">
+                            <label for="Price">Price:</label>
+                            <input type="text" class="form-control" @bind="invoiceDetail.Price" />
+                            <ValidationMessage For="@(() => invoiceDetail.Price)" />
+                        </div>
+                        <div class="modal-footer justify-content-end">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary mr-2">Add</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@using Bookkeepify.Models
+@using Microsoft.EntityFrameworkCore
+
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+    [Parameter]
+    public EventCallback<InvoiceDetail> OnAdd { get; set; }
+    [Parameter]
+    public List<Product> ProductsList { get; set; }
+
+    private InvoiceDetail invoiceDetail = new InvoiceDetail();
+    private int _selectedProductId;
+    private Product SelectedProduct;
+
+    private async Task AddInvoiceDetail()
+    {
+        invoiceDetail.Product = ProductsList.FirstOrDefault(a => a.Id == invoiceDetail.ProductId);
+        await OnAdd.InvokeAsync(invoiceDetail);
+        invoiceDetail = new InvoiceDetail();
+    }
+
+    private int SelectedProductId
+    {
+        get => _selectedProductId;
+        set
+        {
+            _selectedProductId = value;
+            UpdatePrice(); // Invoke UpdatePrice when the selected product changes
+        }
+    }
+
+    // Method to update the price when the selected product changes
+    private void UpdatePrice()
+    {
+        var selectedProduct = ProductsList.FirstOrDefault(p => p.Id == SelectedProductId);
+        if (selectedProduct != null)
+        {
+            invoiceDetail.Price = selectedProduct.Price;
+            invoiceDetail.ProductId = SelectedProductId;
+            invoiceDetail.Product = selectedProduct;
+        }
+    }
+
+    private void CloseModal()
+    {
+        invoiceDetail = new InvoiceDetail();
+        IsVisible = false;
+    }
+}

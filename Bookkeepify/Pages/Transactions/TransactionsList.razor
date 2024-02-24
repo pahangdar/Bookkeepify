@@ -34,7 +34,7 @@
                     <!--<tr @onclick="() => ToggleDetails(transaction)" class="@(selectedTransaction != null && selectedTransaction.Id == transaction.Id ? "alert-info" : "")">-->
                     <tr class="@(selectedTransaction != null && selectedTransaction.Id == transaction.Id ? "alert-info" : "")">
                         <td>@transaction.Id</td>
-                        <td>@transaction.Date</td>
+                        <td>@transaction.Date.ToString("MM/dd/yyyy")</td>
                         <td>@transaction.Description</td>
                         @if (transaction.Customer != null)
                         {
@@ -149,8 +149,9 @@ else
 
         if (isConfirmed)
         {
-            await TransactionDetailService.DeleteTransactionDetailsAsync(selectedTransaction.Id);
-            await TransactionService.DeleteTransactionAsync(selectedTransaction.Id);
+            //await TransactionDetailService.DeleteTransactionDetailsAsync(selectedTransaction.Id);
+            //await TransactionService.DeleteTransactionAsync(selectedTransaction.Id);
+            await TransactionService.DeleteTransactionAndDetailAsync(selectedTransaction.Id);
             await RefreshTransactions(); // Refresh transaction list after deletion
             deleteMessage = "";
         }

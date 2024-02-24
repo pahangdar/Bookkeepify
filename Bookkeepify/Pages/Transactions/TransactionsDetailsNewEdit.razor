@@ -121,29 +121,7 @@ else
             return;
         }
 
-        if (isEditMode)
-        {
-            await TransactionService.UpdateTransactionAsync(transaction);
-        }
-        else
-        {
-            await TransactionService.AddTransactionAsync(transaction);
-        }
-        int transactionId = transaction.Id; ;
-
-
-        // Assign the obtained transaction ID to the TransactionId property of each TransactionDetail
-        foreach (var detail in details)
-        {
-            detail.TransactionId = transactionId;
-        }
-
-        // Save the transaction details
-        if (isEditMode)
-        {
-            await TransactionDetailService.DeleteTransactionDetailsAsync(transactionId);
-        }
-        var (success, errMessage) = await TransactionDetailService.SaveTransactionDetailsAsync(details);
+        var (success, errMessage) = await TransactionService.SaveTransactionAndDetailAsync(transaction, details);
 
         if (success)
         {

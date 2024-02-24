@@ -1,0 +1,92 @@
+﻿@page "/invoices/details/list"
+@attribute [Authorize]
+
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var tdetail in InvoiceDetails)
+            {
+            @if (tdetail != null)
+            {
+                <tr>
+                    @if (@tdetail.Product != null)
+                    {
+                        <td>@tdetail.Product.Name</td>
+                    } else
+                    {
+                        <td>@tdetail.ProductId</td>
+                    }
+                    <td>@(tdetail.Quantity % 1 == 0 ? tdetail.Quantity.ToString("F0") : tdetail.Quantity.ToString("F2"))</td>
+                    <td>@(tdetail.Price % 1 == 0 ? tdetail.Price.ToString("F0") : tdetail.Price.ToString("F2"))</td>
+                    <td>@tdetail.Total.ToString("F2")</td>
+                    @if (HasDelete)
+                    {
+                        <td>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteInvoiceDetail(tdetail)" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                                <i class="oi oi-trash"></i>
+                            </button>
+                        </td>
+                    }
+                </tr>
+            }
+            }
+            <tr>
+                <th></th>
+                <th></th>
+                <th>Overall Sum:</th>
+                <th>@sumInvoice.ToString("F2")</th>
+                <th></th>
+            </tr>
+        </tbody>
+    </table>
+
+@using Bookkeepify.Models
+
+@code {
+    [Parameter]
+    public List<InvoiceDetail> InvoiceDetails { get; set; }
+    [Parameter]
+    public bool HasDelete { get; set; }
+
+    private decimal sumInvoice;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        if(InvoiceDetails == null)
+        {
+            InvoiceDetails = new List<InvoiceDetail>();
+        }
+        SumInvoice();
+    }
+
+    private async Task DeleteInvoiceDetail(InvoiceDetail detail)
+    {
+        InvoiceDetails.Remove(detail);
+        SumInvoice();
+    }
+
+    private void SumInvoice()
+    {
+        sumInvoice = 0;
+        if (InvoiceDetails == null)
+        {
+            return;
+        }
+
+        foreach (var dt in InvoiceDetails)
+        {
+            sumInvoice += dt.Quantity * dt.Price;
+        }
+    }
+
+}

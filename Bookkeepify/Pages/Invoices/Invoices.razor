@@ -7,7 +7,9 @@
 {
     @if (ShowNewEditPanel)
     {
-        <InvoicesNewEdit SelectedInvoice="@selectedInvoice" OnSave="HandleSaveResult" />
+        <InvoicesNewEdit SelectedInvoice="@selectedInvoice"
+                         SelectedInvoiceType="@selectedInvoiceType"
+                         OnSave="HandleSaveResult" />
     }
     else
     {

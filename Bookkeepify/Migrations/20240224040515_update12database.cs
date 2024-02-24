@@ -9,6 +9,7 @@ namespace Bookkeepify.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+
             migrationBuilder.CreateTable(
                 name: "Invoices",
                 columns: table => new
@@ -16,7 +17,7 @@ namespace Bookkeepify.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Number = table.Column<int>(type: "int", nullable: false),
                     DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CustomerId = table.Column<int>(type: "int", nullable: false),
@@ -42,7 +43,7 @@ namespace Bookkeepify.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "invoiceDetails",
+                name: "InvoiceDetails",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -54,29 +55,30 @@ namespace Bookkeepify.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_invoiceDetails", x => x.Id);
+                    table.PrimaryKey("PK_InvoiceDetails", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_invoiceDetails_Invoices_InvoiceId",
+                        name: "FK_InvoiceDetails_Invoices_InvoiceId",
                         column: x => x.InvoiceId,
                         principalTable: "Invoices",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_invoiceDetails_Products_ProductId",
+                        name: "FK_InvoiceDetails_Products_ProductId",
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
+
             migrationBuilder.CreateIndex(
-                name: "IX_invoiceDetails_InvoiceId",
-                table: "invoiceDetails",
+                name: "IX_InvoiceDetails_InvoiceId",
+                table: "InvoiceDetails",
                 column: "InvoiceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_invoiceDetails_ProductId",
-                table: "invoiceDetails",
+                name: "IX_InvoiceDetails_ProductId",
+                table: "InvoiceDetails",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
@@ -88,15 +90,17 @@ namespace Bookkeepify.Migrations
                 name: "IX_Invoices_TransactionId",
                 table: "Invoices",
                 column: "TransactionId");
+
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "invoiceDetails");
+                name: "InvoiceDetails");
 
             migrationBuilder.DropTable(
                 name: "Invoices");
+
         }
     }
 }
