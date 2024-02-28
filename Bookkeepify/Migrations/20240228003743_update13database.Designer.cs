@@ -4,6 +4,7 @@ using Bookkeepify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bookkeepify.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240228003743_update13database")]
+    partial class update13database
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -365,10 +367,10 @@ namespace Bookkeepify.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int?>("CreditAccountId")
+                    b.Property<int>("CreditAccountId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("DebtAccountId")
+                    b.Property<int>("DebtAccountId")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
@@ -515,11 +517,15 @@ namespace Bookkeepify.Migrations
                 {
                     b.HasOne("Bookkeepify.Models.Account", "CreditAccount")
                         .WithMany()
-                        .HasForeignKey("CreditAccountId");
+                        .HasForeignKey("CreditAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Bookkeepify.Models.Account", "DebtAccount")
                         .WithMany()
-                        .HasForeignKey("DebtAccountId");
+                        .HasForeignKey("DebtAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("CreditAccount");
 

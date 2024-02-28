@@ -1,0 +1,84 @@
+﻿@page "/transactiontypes"
+@attribute [Authorize]
+
+<PageTitle>TransactionTypes</PageTitle>
+
+@if (HasAccess)
+{
+    @if (!ShowNewEditPanel)
+    {
+        <button class="btn btn-success btn-lg" @onclick="NewTransactionType">
+            <i class="oi oi-plus"></i>&nbsp;New TransactionType
+        </button>
+        <br />
+        <br />
+    } else
+    {
+        <TransactionTypesNewEdit SelectedTransactionType="@selectedTransactionType" OnSave="HandleSaveResult" />
+    }
+
+    <TransactionTypesList DesiableButtons="@ShowNewEditPanel"
+                  OnEdit="HandleEditTransactionType"
+                  @ref="transactiontypesListRef" />
+
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    private bool HasAccess { get; set; } = false;
+
+    private TransactionType selectedTransactionType;
+    private Boolean ShowNewEditPanel = false;
+
+    private TransactionTypesList transactiontypesListRef;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+    }
+
+    private void NewTransactionType()
+    {
+        ShowNewEditPanel = true;
+        selectedTransactionType = null;
+    }
+
+    private async Task HandleEditTransactionType(TransactionType transactiontype)
+    {
+        ShowNewEditPanel = true;
+        selectedTransactionType = transactiontype;
+    }
+
+    private async Task HandleSaveResult(bool isSaved)
+    {
+        ShowNewEditPanel = false;
+
+
+        if (isSaved)
+        {
+            // in edit mode there is no need to the following code!
+        }
+        else
+        {
+            // Cancel was selected
+        }
+        if (transactiontypesListRef != null)
+        {
+            // Call the RefreshAccounts method of the AccountsList component
+            await transactiontypesListRef.RefreshTransactionTypes();
+        }
+    }
+
+}

@@ -1,5 +1,6 @@
 ﻿using Bookkeepify.Data;
 using Bookkeepify.Models;
+using Bookkeepify.Pages.TransactionType;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -29,6 +30,14 @@ namespace Bookkeepify.Services
                                  .Include(a => a.TransactionType)
                                  .Include(a => a.Customer)
                                  .ToListAsync();
+        }
+
+        public async Task<Transaction> GetTransactionByIdAsync(int transactionId)
+        {
+            return await _context.Transactions
+                                 .Include(a => a.TransactionType)
+                                 .Include(a => a.Customer)
+                                 .FirstOrDefaultAsync(a => a.Id == transactionId);
         }
 
         public async Task AddTransactionAsync(Transaction transaction)

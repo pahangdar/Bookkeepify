@@ -1,6 +1,8 @@
 ﻿using Bookkeepify.Data;
 using Bookkeepify.Models;
+using Bookkeepify.Pages.Invoices;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 
 namespace Bookkeepify.Services
 {
@@ -8,6 +10,8 @@ namespace Bookkeepify.Services
     {
         private readonly AppDbContext _context;
         private readonly InvoiceDetailService _invoiceDetailService;
+        private readonly TransactionService _transactionService;
+        private readonly TransactionTypeService _transactionTypeService;
         private Invoice _invoice;
 
         public Invoice Invoice
@@ -16,10 +20,15 @@ namespace Bookkeepify.Services
             set { _invoice = value; }
         }
 
-        public InvoiceService(AppDbContext context, InvoiceDetailService invoiceDetailService)
+        public InvoiceService(AppDbContext context,
+                              InvoiceDetailService invoiceDetailService,
+                              TransactionService transactionService,
+                              TransactionTypeService transactionTypeService)
         {
             _context = context;
             _invoiceDetailService = invoiceDetailService;
+            _transactionService = transactionService;
+            _transactionTypeService = transactionTypeService;
         }
 
         public async Task<List<Invoice>> GetInvoicesAsync(InvoiceType? invoiceType)
@@ -67,6 +76,53 @@ namespace Bookkeepify.Services
             SaveInvoiceAndDetailsAsync(Invoice invoice, List<InvoiceDetail> details)
         {
             bool editMode = invoice.Id > 0;
+            decimal sum = 0;
+            Transaction transaction;
+            List<TransactionDetail> tdetails = new List<TransactionDetail>();
+
+            foreach(InvoiceDetail detail in details)
+            {
+                sum += detail.Total;
+            }
+
+            if (editMode)
+            {
+                transaction = await _transactionService.GetTransactionByIdAsync(invoice.TransactionId);
+            }
+            else
+            {
+                transaction = new Transaction();
+                transaction.Id = 0;
+            }
+
+            transaction.CustomerId = invoice.CustomerId;
+            transaction.Date = invoice.Date;
+            transaction.Description = "Invoice";
+            transaction.UserId = invoice.UserId;
+            transaction.TransactionTypeId = (invoice.InvoiceType == InvoiceType.Invoice) ? 4: 5;
+            var transactionType = await _transactionTypeService.GetTransactionTypeByIdAsync(transaction.TransactionTypeId);
+            transaction.TransactionType = transactionType;
+
+            tdetails.Add(new TransactionDetail
+            {
+                AccountId = (int)transaction.TransactionType.DebtAccountId,
+                DebitAmount = sum,
+                CreditAmount = 0
+            });
+            tdetails.Add(new TransactionDetail
+            {
+                AccountId = (int)transaction.TransactionType.CreditAccountId,
+                DebitAmount = 0,
+                CreditAmount = sum
+            });
+
+            var (tsuccess, terrMessage) = await _transactionService.SaveTransactionAndDetailAsync(transaction, tdetails);
+
+            if(!tsuccess) {
+                return(false, "Transaction Submit Error"); 
+            }
+
+            invoice.TransactionId = transaction.Id;
             if (editMode)
             {
                 await UpdateInvoiceAsync(invoice);

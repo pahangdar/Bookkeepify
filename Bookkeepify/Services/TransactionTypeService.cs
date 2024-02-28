@@ -17,7 +17,15 @@ namespace Bookkeepify.Services
 
         public async Task<List<TransactionType>> GetTransactionTypesAsync()
         {
-            return await _context.TransactionTypes.ToListAsync();
+            return await _context.TransactionTypes
+                                 .Include(t => t.DebtAccount)
+                                 .Include(t => t.CreditAccount)
+                                 .ToListAsync();
+        }
+
+        public async Task<TransactionType> GetTransactionTypeByIdAsync(int transactionTypeId)
+        {
+            return await _context.TransactionTypes.FindAsync(transactionTypeId);
         }
 
         public async Task AddTransactionTypeAsync(TransactionType transactionType)

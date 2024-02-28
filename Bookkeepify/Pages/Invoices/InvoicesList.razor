@@ -26,6 +26,7 @@
                     <th>Customer</th>
                     <th>Type</th>
                     <th>Total Amount</th>
+                    <th>Transaction#</th>
                     <th></th>
                 </tr>
             </thead>
@@ -47,6 +48,7 @@
                         }
                         <td>@invoice.InvoiceType</td>
                         <td>@invoice.TotalAmount.ToString("F2")</td>
+                        <td>@invoice.TransactionId</td>
                         <td>
                             <button class="btn btn-info btn-sm"
                                     @onclick:stopPropagation
