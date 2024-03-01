@@ -1,0 +1,149 @@
+﻿@page "/payments/list"
+@attribute [Authorize]
+
+<PageTitle>Payments</PageTitle>
+<ConfirmationDialog IsVisible="@isConfirmationDialogVisible"
+                    OnConfirm="DeleteConfirmed"
+                    Title="Delete Payment Confirmation"
+                    Message="@deleteMessage" />
+@if (HasAccess)
+{
+    <h3>Payments List</h3>
+
+    @if (payments == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ref#</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Description</th>
+                    <th>Transaction#</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var payment in payments)
+                {
+                    <tr class="@(selectedPayment != null && selectedPayment.Id == payment.Id ? "alert-info" : "")">
+                        <td>@payment.Id</td>
+                        <td>@payment.Date.ToString("MM/dd/yyyy")</td>
+                        <td>@payment.Customer.Name</td>
+                        <td>@payment.Amount.ToString("F2")</td>
+                        <td>@payment.Description</td>
+                        <td>@payment.TransactionId</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm"
+                                    @onclick="() => EditPayment(payment)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Edit"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-pencil"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => ShowConfirmationDialog(payment)"
+                                    data-bs-toggle=" tooltip"
+                                    data-bs-placement="top"
+                                    title="Delete"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@inject PaymentService PaymentService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    [Parameter]
+    public EventCallback<Payment> OnEdit { get; set; }
+    [Parameter]
+    public Boolean DesiableButtons { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+
+    private List<Payment> payments;
+    private Payment selectedPayment;
+
+    private bool isConfirmationDialogVisible = false;
+    private string deleteMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (DesiableButtons == null)
+        {
+            DesiableButtons = false;
+        }
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+        await RefreshPayments();
+    }
+
+    private void NewPayment()
+    {
+        DesiableButtons = true;
+        selectedPayment = null;
+    }
+
+    private async void EditPayment(Payment payment)
+    {
+        if (payment != null)
+        {
+            selectedPayment = payment;
+            await OnEdit.InvokeAsync(payment);
+        }
+    }
+
+    private void ShowConfirmationDialog(Payment payment)
+    {
+        if (payment != null)
+        {
+            deleteMessage = $"Are you sure you want to delete '<strong>Payment #{payment.Id}</strong>' ?";
+            selectedPayment = payment;
+            isConfirmationDialogVisible = true;
+        }
+    }
+
+    private async Task DeleteConfirmed(bool isConfirmed)
+    {
+        isConfirmationDialogVisible = false;
+
+        if (isConfirmed)
+        {
+            await PaymentService.DeletePaymentAndTransactionAsync(selectedPayment.Id);
+            await RefreshPayments(); // Refresh Payment list after deletion
+            deleteMessage = "";
+        }
+        selectedPayment = null;
+    }
+
+    public async Task RefreshPayments()
+    {
+        payments = await PaymentService.GetPaymentsAsync();
+        selectedPayment = null;
+    }
+
+
+}

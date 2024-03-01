@@ -1,0 +1,127 @@
+﻿@page "/expenses/new-edit"
+@attribute [Authorize]
+
+<PageTitle>@title</PageTitle>
+
+@if (HasAccess)
+{
+    <h3>@title</h3>
+
+    @if (isSaved)
+    {
+        <p><em>Expense saved successfully!</em></p>
+    }
+
+    @if (1 == 2)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+
+        <EditForm Model="@expense" OnValidSubmit="SaveExpense">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="date">Date:</label>
+                <div class="col-lg-3">
+                    <InputDate class="form-control" @bind-Value="@expense.Date" />
+                    <ValidationMessage For="@(() => expense.Date)" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <InputText class="form-control" @bind-Value="@expense.Description" />
+                <ValidationMessage For="@(() => expense.Description)" />
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Amount:</label>
+                <input type="text" class="form-control" @bind="expense.Amount" />
+                <ValidationMessage For="@(() => expense.Amount)" />
+            </div>
+
+            <div class="form-group mt-4  mb-4">
+                <button type="submit" class="btn btn-primary mr-2">Save</button>
+                <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            </div>
+            <hr />
+        </EditForm>
+    }
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@using System.Security.Claims
+@inject ExpenseService ExpenseService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    [Parameter]
+    public EventCallback<bool> OnSave { get; set; }
+    [Parameter]
+    public Expense SelectedExpense { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+    private Expense expense = new Expense();
+    private bool isSaved = false;
+    private bool isEditMode => SelectedExpense != null;
+    private string title;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+
+        if (isEditMode)
+        {
+            title = "Edit Expense";
+            expense.Date = SelectedExpense.Date;
+            expense.Description = SelectedExpense.Description;
+            expense.Amount = SelectedExpense.Amount;
+            expense.TransactionId = SelectedExpense.TransactionId;
+        }
+        else
+        {
+            title = "Add New Expense";
+            expense.Date = DateTime.Today;
+        }
+        expense.UserId = userId;
+    }
+
+    private async Task SaveExpense()
+    {
+        if (isEditMode)
+        {
+            SelectedExpense.Date = expense.Date;
+            SelectedExpense.Description = expense.Description;
+            SelectedExpense.Amount = expense.Amount;
+            var (success, errMessage) = await ExpenseService.SaveExpenseAndTransactionAsync(SelectedExpense);
+        }
+        else
+        {
+            var (success, errMessage) = await ExpenseService.SaveExpenseAndTransactionAsync(expense);
+        }
+        // Clear the form and set the saved flag
+        expense = new Expense();
+        isSaved = true;
+        await OnSave.InvokeAsync(isSaved);
+    }
+
+    private void Cancel()
+    {
+        // Reset the form fields and clear any validation errors
+        expense = new Expense();
+        isSaved = false;
+        OnSave.InvokeAsync(isSaved);
+    }
+}

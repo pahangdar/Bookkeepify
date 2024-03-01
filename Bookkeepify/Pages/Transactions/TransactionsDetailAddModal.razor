@@ -25,12 +25,12 @@
                         </div>
                         <div class="form-group">
                             <label for="amountDebit">Debit:</label>
-                            <input type="number" class="form-control" @bind="transactionDetail.DebitAmount" />
+                            <input type="text" class="form-control" @bind="transactionDetail.DebitAmount" />
                             <ValidationMessage For="@(() => transactionDetail.DebitAmount)" />
                         </div>
                         <div class="form-group">
                             <label for="amountCredit">Credit:</label>
-                            <input type="number" class="form-control" @bind="transactionDetail.CreditAmount" />
+                            <input type="text" class="form-control" @bind="transactionDetail.CreditAmount" />
                             <ValidationMessage For="@(() => transactionDetail.CreditAmount)" />
                         </div>
                         <div class="modal-footer justify-content-end">

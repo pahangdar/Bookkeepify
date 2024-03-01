@@ -21,6 +21,7 @@
             <thead>
                 <tr>
                     <th>Ref#</th>
+                    <th>Invoice Number</th>
                     <th>Date</th>
                     <th>Description</th>
                     <th>Customer</th>
@@ -36,6 +37,7 @@
                     <!--<tr @onclick="() => ToggleDetails(invoice)" class="@(selectedInvoice != null && selectedInvoice.Id == invoice.Id ? "alert-info" : "")">-->
                     <tr class="@(selectedInvoice != null && selectedInvoice.Id == invoice.Id ? "alert-info" : "")">
                         <td>@invoice.Id</td>
+                        <td>@invoice.Number</td>
                         <td>@invoice.Date.ToString("MM/dd/yyyy")</td>
                         <td>@invoice.Description</td>
                         @if (invoice.Customer != null)
@@ -80,7 +82,7 @@
                     @if (selectedInvoice != null && selectedInvoice.Id == invoice.Id)
                     {
                         <tr>
-                            <td colspan="5">
+                            <td colspan="8">
                                 <!-- Set colspan to match the number of columns in your table -->
                                 <InvoicesDetailsList InvoiceDetails="@invoiceDetails" HasDelete="false" />
                             </td>
@@ -148,7 +150,7 @@ else
     {
         if (invoice != null)
         {
-            deleteMessage = $"Are you sure you want to delete '<strong>{invoice.Id}-{invoice.Description}</strong>' ?";
+            deleteMessage = $"Are you sure you want to delete '<strong>Invoice Numer {invoice.Number}</strong>' ?";
             selectedInvoice = invoice;
             invoiceDetails = await InvoiceDetailService.GetInvoiceDetailsAsync(invoice.Id);
             isConfirmationDialogVisible = true;

@@ -61,22 +61,25 @@
                                     disabled="@DesiableButtons">
                                 <i class="oi oi-eye"></i>
                             </button>
-                            <button class="btn btn-primary btn-sm"
-                                    @onclick="() => EditTransaction(transaction)"
-                                    data-bs-toggle="tooltip"
-                                    data-bs-placement="top"
-                                    title="Edit"
-                                    disabled="@DesiableButtons">
-                                <i class="oi oi-pencil"></i>
-                            </button>
-                            <button class="btn btn-danger btn-sm"
-                                    @onclick="() => ShowConfirmationDialog(transaction)"
-                                    data-bs-toggle="tooltip"
-                                    data-bs-placement="top"
-                                    title="Delete"
-                                    disabled="@DesiableButtons">
-                                <i class="oi oi-trash"></i>
-                            </button>
+                            @if(transaction.TransactionTypeId == 1)
+                            {
+                                <button class="btn btn-primary btn-sm"
+                                        @onclick="() => EditTransaction(transaction)"
+                                        data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        title="Edit"
+                                        disabled="@DesiableButtons">
+                                    <i class="oi oi-pencil"></i>
+                                </button>
+                                <button class="btn btn-danger btn-sm"
+                                        @onclick="() => ShowConfirmationDialog(transaction)"
+                                        data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        title="Delete"
+                                        disabled="@DesiableButtons">
+                                    <i class="oi oi-trash"></i>
+                                </button>
+                            }
                         </td>
                     </tr>
                     @if (selectedTransaction != null && selectedTransaction.Id == transaction.Id)

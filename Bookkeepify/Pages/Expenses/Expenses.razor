@@ -1,0 +1,84 @@
+﻿@page "/expenses"
+@attribute [Authorize]
+
+<PageTitle>Expenses</PageTitle>
+
+@if (HasAccess)
+{
+    @if (!ShowNewEditPanel)
+    {
+        <button class="btn btn-success btn-lg" @onclick="NewExpense">
+            <i class="oi oi-plus"></i>&nbsp;New Expense
+        </button>
+        <br />
+        <br />
+    } else
+    {
+        <ExpensesNewEdit SelectedExpense="@selectedExpense" OnSave="HandleSaveResult" />
+    }
+
+    <ExpensesList DesiableButtons="@ShowNewEditPanel"
+                  OnEdit="HandleEditExpense"
+                  @ref="expensesListRef" />
+
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    private bool HasAccess { get; set; } = false;
+
+    private Expense selectedExpense;
+    private Boolean ShowNewEditPanel = false;
+
+    private ExpensesList expensesListRef;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+    }
+
+    private void NewExpense()
+    {
+        ShowNewEditPanel = true;
+        selectedExpense = null;
+    }
+
+    private async Task HandleEditExpense(Expense expense)
+    {
+        ShowNewEditPanel = true;
+        selectedExpense = expense;
+    }
+
+    private async Task HandleSaveResult(bool isSaved)
+    {
+        ShowNewEditPanel = false;
+
+
+        if (isSaved)
+        {
+            // in edit mode there is no need to the following code!
+        }
+        else
+        {
+            // Cancel was selected
+        }
+        if (expensesListRef != null)
+        {
+            // Call the RefreshAccounts method of the AccountsList component
+            await expensesListRef.RefreshExpenses();
+        }
+    }
+
+}

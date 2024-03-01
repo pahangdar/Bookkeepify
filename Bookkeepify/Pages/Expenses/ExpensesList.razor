@@ -1,0 +1,147 @@
+﻿@page "/expenses/list"
+@attribute [Authorize]
+
+<PageTitle>Expenses</PageTitle>
+<ConfirmationDialog IsVisible="@isConfirmationDialogVisible"
+                    OnConfirm="DeleteConfirmed"
+                    Title="Delete Expense Confirmation"
+                    Message="@deleteMessage" />
+@if (HasAccess)
+{
+    <h3>Expenses List</h3>
+
+    @if (expenses == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ref#</th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Transaction#</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var expense in expenses)
+                {
+                    <tr class="@(selectedExpense != null && selectedExpense.Id == expense.Id ? "alert-info" : "")">
+                        <td>@expense.Id</td>
+                        <td>@expense.Date.ToString("MM/dd/yyyy")</td>
+                        <td>@expense.Description</td>
+                        <td>@expense.Amount.ToString("F2")</td>
+                        <td>@expense.TransactionId</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm"
+                                    @onclick="() => EditExpense(expense)"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Edit"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-pencil"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => ShowConfirmationDialog(expense)"
+                                    data-bs-toggle=" tooltip"
+                                    data-bs-placement="top"
+                                    title="Delete"
+                                    disabled="@DesiableButtons">
+                                <i class="oi oi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@inject ExpenseService ExpenseService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    [Parameter]
+    public EventCallback<Expense> OnEdit { get; set; }
+    [Parameter]
+    public Boolean DesiableButtons { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+
+    private List<Expense> expenses;
+    private Expense selectedExpense;
+
+    private bool isConfirmationDialogVisible = false;
+    private string deleteMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (DesiableButtons == null)
+        {
+            DesiableButtons = false;
+        }
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+        await RefreshExpenses();
+    }
+
+    private void NewExpense()
+    {
+        DesiableButtons = true;
+        selectedExpense = null;
+    }
+
+    private async void EditExpense(Expense expense)
+    {
+        if (expense != null)
+        {
+            selectedExpense = expense;
+            await OnEdit.InvokeAsync(expense);
+        }
+    }
+
+    private void ShowConfirmationDialog(Expense expense)
+    {
+        if (expense != null)
+        {
+            deleteMessage = $"Are you sure you want to delete '<strong>Expense #{expense.Id}</strong>' ?";
+            selectedExpense = expense;
+            isConfirmationDialogVisible = true;
+        }
+    }
+
+    private async Task DeleteConfirmed(bool isConfirmed)
+    {
+        isConfirmationDialogVisible = false;
+
+        if (isConfirmed)
+        {
+            await ExpenseService.DeleteExpenseAndTransactionAsync(selectedExpense.Id);
+            await RefreshExpenses(); // Refresh Expense list after deletion
+            deleteMessage = "";
+        }
+        selectedExpense = null;
+    }
+
+    public async Task RefreshExpenses()
+    {
+        expenses = await ExpenseService.GetExpensesAsync();
+        selectedExpense = null;
+    }
+
+
+}

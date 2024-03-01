@@ -97,7 +97,7 @@ namespace Bookkeepify.Services
 
             transaction.CustomerId = invoice.CustomerId;
             transaction.Date = invoice.Date;
-            transaction.Description = "Invoice";
+            transaction.Description = $"Invoice {invoice.Number}";
             transaction.UserId = invoice.UserId;
             transaction.TransactionTypeId = (invoice.InvoiceType == InvoiceType.Invoice) ? 4: 5;
             var transactionType = await _transactionTypeService.GetTransactionTypeByIdAsync(transaction.TransactionTypeId);
@@ -151,9 +151,11 @@ namespace Bookkeepify.Services
             var invoice = await _context.Invoices.FindAsync(invoiceId);
             if (invoice != null)
             {
+                int transactionId = invoice.TransactionId;
                 await _invoiceDetailService.DeleteInvoiceDetailsAsync(invoice.Id);
                 _context.Invoices.Remove(invoice);
                 await _context.SaveChangesAsync();
+                await _transactionService.DeleteTransactionAndDetailAsync(transactionId);
             }
         }
 

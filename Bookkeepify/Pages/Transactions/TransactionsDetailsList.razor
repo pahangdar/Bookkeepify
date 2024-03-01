@@ -24,8 +24,8 @@
                     {
                         <td>@tdetail.AccountId</td>
                     }
-                    <td>@tdetail.DebitAmount</td>
-                    <td>@tdetail.CreditAmount</td>
+                    <td>@(tdetail.DebitAmount > 0 ? tdetail.DebitAmount.ToString("F2") : "")</td>
+                    <td>@(tdetail.CreditAmount > 0 ? tdetail.CreditAmount.ToString("F2") : "")</td>
                     @if (HasDelete)
                     {
                         <td>
@@ -39,8 +39,8 @@
             }
             <tr>
                 <th>Overall Sum:</th>
-                <th>@sumDebit</th>
-                <th>@SumCredit</th>
+                <th>@sumDebit.ToString("F2")</th>
+                <th>@SumCredit.ToString("F2")</th>
                 <th></th>
             </tr>
         </tbody>

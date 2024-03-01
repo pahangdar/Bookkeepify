@@ -1,0 +1,149 @@
+﻿@page "/payments/new-edit"
+@attribute [Authorize]
+
+<PageTitle>@title</PageTitle>
+
+@if (HasAccess)
+{
+    <h3>@title</h3>
+
+    @if (isSaved)
+    {
+        <p><em>Payment saved successfully!</em></p>
+    }
+
+    @if (customers == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+
+        <EditForm Model="@payment" OnValidSubmit="SavePayment">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="date">Date:</label>
+                <div class="col-lg-3">
+                    <InputDate class="form-control" @bind-Value="@payment.Date" />
+                    <ValidationMessage For="@(() => payment.Date)" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="paymentCustomer">Customer:</label>
+                <select class="form-control" @bind="@payment.CustomerId" required>
+                    <option value="" selected disabled>Choose...</option>
+                    @foreach (var customer in customers)
+                    {
+                        <option value="@customer.Id">@customer.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Amount:</label>
+                <input type="text" class="form-control" @bind="payment.Amount" />
+                <ValidationMessage For="@(() => payment.Amount)" />
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <InputText class="form-control" @bind-Value="@payment.Description" />
+                <ValidationMessage For="@(() => payment.Description)" />
+            </div>
+
+
+            <div class="form-group mt-4  mb-4">
+                <button type="submit" class="btn btn-primary mr-2">Save</button>
+                <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            </div>
+            <hr />
+        </EditForm>
+    }
+}
+else
+{
+    <p>Access denied! You don't have permission to view this page.</p>
+}
+
+@using Bookkeepify.Models
+@using Bookkeepify.Services
+@using System.Security.Claims
+@inject CustomerService CustomerService
+@inject PaymentService PaymentService
+@inject AuthorizationService AuthorizationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+@code {
+    [Parameter]
+    public EventCallback<bool> OnSave { get; set; }
+    [Parameter]
+    public Payment SelectedPayment { get; set; }
+
+    private bool HasAccess { get; set; } = false;
+    private Payment payment = new Payment();
+    private List<Customer> customers;
+    private bool isSaved = false;
+    private bool isEditMode => SelectedPayment != null;
+    private string title;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+
+        customers = await CustomerService.GetCustomersAsync();
+
+        if (isEditMode)
+        {
+            title = "Edit Payment";
+            payment.Date = SelectedPayment.Date;
+            payment.Description = SelectedPayment.Description;
+            payment.Amount = SelectedPayment.Amount;
+            payment.CustomerId = SelectedPayment.CustomerId;
+            payment.TransactionId = SelectedPayment.TransactionId;
+        }
+        else
+        {
+            title = "Add New Payment";
+            payment.Date = DateTime.Today;
+        }
+        payment.UserId = userId;
+    }
+
+    private async Task SavePayment()
+    {
+        if (isEditMode)
+        {
+            SelectedPayment.Date = payment.Date;
+            SelectedPayment.Description = payment.Description;
+            SelectedPayment.Amount = payment.Amount;
+            SelectedPayment.CustomerId = payment.CustomerId;
+            SelectedPayment.Customer = customers.FirstOrDefault(a => a.Id == payment.CustomerId);
+            //SelectedPayment.TransactionId = payment.TransactionId;
+            //await PaymentService.UpdatePaymentAsync(SelectedPayment);
+            var (success, errMessage) = await PaymentService.SavePaymentAndTransactionAsync(SelectedPayment);
+        }
+        else
+        {
+            payment.Customer = customers.FirstOrDefault(a => a.Id == payment.CustomerId);
+            var (success, errMessage) = await PaymentService.SavePaymentAndTransactionAsync(payment);
+        }
+        // Clear the form and set the saved flag
+        payment = new Payment();
+        isSaved = true;
+        await OnSave.InvokeAsync(isSaved);
+    }
+
+    private void Cancel()
+    {
+        // Reset the form fields and clear any validation errors
+        payment = new Payment();
+        isSaved = false;
+        OnSave.InvokeAsync(isSaved);
+    }
+}
