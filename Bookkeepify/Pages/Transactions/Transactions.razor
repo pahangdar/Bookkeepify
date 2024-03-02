@@ -1,4 +1,4 @@
-﻿@page "/transactions"
+﻿@page "/transactions/{id?}"
 @attribute [Authorize]
 
 <PageTitle>Transactions</PageTitle>
@@ -35,6 +35,9 @@ else
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 @code {
+    [Parameter]
+    public string Id { get; set; }
+
     private bool HasAccess { get; set; } = false;
 
     private Transaction selectedTransaction;
@@ -46,6 +49,11 @@ else
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         HasAccess = await AuthorizationService.CheckPageAccessAsync(authState);
+
+        if (!string.IsNullOrEmpty(Id))
+        {
+            
+        }
     }
 
     private void NewTransaction()

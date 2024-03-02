@@ -55,7 +55,8 @@ else
     private string errorMessage;
     private string errorTitle;
     private int count = 0;
-    private InvoiceType selectedInvoiceType { get; set; }
+    //private InvoiceType selectedInvoiceType { get; set; }
+    private InvoiceType selectedInvoiceType;
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,12 +73,12 @@ else
 
         if (isEditMode)
         {
-            title = "Edit Invoice Details";
+            title = $"Edit {selectedInvoiceType} Details";
             details = await InvoiceDetailService.GetInvoiceDetailsAsync(invoice.Id);
         }
         else
         {
-            title = "Add Invoice Details";
+            title = $"Add {selectedInvoiceType} Details";
         }
 
         SumInvoice();
@@ -117,7 +118,15 @@ else
 
         if (success)
         {
-            NavigationManager.NavigateTo($"/invoices/{selectedInvoiceType}");
+            if (selectedInvoiceType == InvoiceType.Invoice)
+            {
+                NavigationManager.NavigateTo($"/invoices/{selectedInvoiceType}");
+
+            } else
+            {
+                NavigationManager.NavigateTo($"/salesReceipts/{selectedInvoiceType}");
+
+            }
         } else
         {
             errorMessage = errMessage;

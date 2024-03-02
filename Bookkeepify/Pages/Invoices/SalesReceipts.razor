@@ -1,18 +1,20 @@
 ﻿@page "/salesReceipts/{selectedInvoiceType}"
 @attribute [Authorize]
 
-<PageTitle>@SelectedInvoiceType</PageTitle>
+<PageTitle>@selectedInvoiceType</PageTitle>
 
 @if (HasAccess)
 {
     @if (ShowNewEditPanel)
     {
-        <InvoicesNewEdit SelectedInvoice="@selectedInvoice" OnSave="HandleSaveResult" />
+        <InvoicesNewEdit SelectedInvoice="@selectedInvoice"
+                         SelectedInvoiceType="@selectedInvoiceType"
+                         OnSave="HandleSaveResult" />
     }
     else
     {
         <button class="btn btn-success btn-lg" @onclick="NewInvoice">
-            <i class="oi oi-plus"></i>&nbsp;New @SelectedInvoiceType
+            <i class="oi oi-plus"></i>&nbsp;New @selectedInvoiceType
         </button>
         <br />
         <br />
@@ -62,7 +64,7 @@ else
         }
         else
         {
-            selectedInvoiceType = InvoiceType.Invoice; // Replace DefaultValue with an actual default value
+            selectedInvoiceType = InvoiceType.SalesReceipt; // Replace DefaultValue with an actual default value
             StateHasChanged();
         }
     }

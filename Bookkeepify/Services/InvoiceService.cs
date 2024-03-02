@@ -97,7 +97,7 @@ namespace Bookkeepify.Services
 
             transaction.CustomerId = invoice.CustomerId;
             transaction.Date = invoice.Date;
-            transaction.Description = $"Invoice {invoice.Number}";
+            transaction.Description = $"{invoice.InvoiceType} {invoice.Number}";
             transaction.UserId = invoice.UserId;
             transaction.TransactionTypeId = (invoice.InvoiceType == InvoiceType.Invoice) ? 4: 5;
             var transactionType = await _transactionTypeService.GetTransactionTypeByIdAsync(transaction.TransactionTypeId);

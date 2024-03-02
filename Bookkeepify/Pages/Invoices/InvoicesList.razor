@@ -50,7 +50,9 @@
                         }
                         <td>@invoice.InvoiceType</td>
                         <td>@invoice.TotalAmount.ToString("F2")</td>
-                        <td>@invoice.TransactionId</td>
+                        <td>
+                            <a href="@($"Transactions/{invoice.TransactionId}")">@invoice.TransactionId</a>
+                        </td>
                         <td>
                             <button class="btn btn-info btn-sm"
                                     @onclick:stopPropagation
